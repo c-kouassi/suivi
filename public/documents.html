@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Documents</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link active" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>📁 Documents médicaux</h1>
+        <p>Votre dossier de sortie et documents de suivi</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Info banner -->
+      <div class="alert alert-info mb-6">
+        ℹ️ Ces documents sont fournis par votre équipe médicale. Pour toute question, consultez votre médecin traitant.
+      </div>
+
+      <!-- Catégories -->
+      <div style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;" id="filterBtns">
+        <button class="btn btn-primary btn-sm" data-filter="all" onclick="filterDocs('all', this)">Tous</button>
+        <button class="btn btn-outline btn-sm" data-filter="Chirurgie" onclick="filterDocs('Chirurgie', this)">🔪 Chirurgie</button>
+        <button class="btn btn-outline btn-sm" data-filter="Ordonnance" onclick="filterDocs('Ordonnance', this)">💊 Ordonnances</button>
+        <button class="btn btn-outline btn-sm" data-filter="Examen" onclick="filterDocs('Examen', this)">🔬 Examens</button>
+      </div>
+
+      <!-- Documents Grid -->
+      <div class="doc-grid" id="docGrid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-state-icon">📁</div>
+          <h3>Chargement...</h3>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Document -->
+<div class="modal-overlay" id="docModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="docModalTitle">Document médical</h3>
+      <button class="modal-close" onclick="closeModal('docModal')">✕</button>
+    </div>
+    <div class="modal-body" id="docModalBody">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('docModal')">Fermer</button>
+      <button class="btn btn-outline">📥 Demander le PDF</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  let allDocs = [];
+
+  const docIcons = {
+    'Chirurgie': '🔪',
+    'Ordonnance': '💊',
+    'Examen': '🔬',
+    'Compte rendu': '📝',
+    'Résultats': '📊'
+  };
+
+  function filterDocs(filter, btn) {
+    document.querySelectorAll('#filterBtns button').forEach(b => {
+      b.className = 'btn btn-outline btn-sm';
+    });
+    btn.className = 'btn btn-primary btn-sm';
+
+    const filtered = filter === 'all' ? allDocs : allDocs.filter(d => d.type === filter);
+    renderDocs(filtered);
+  }
+
+  function openDoc(doc) {
+    document.getElementById('docModalTitle').textContent = `${docIcons[doc.type] || '📄'} ${doc.name}`;
+    document.getElementById('docModalBody').innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="background:var(--surface-2); padding:20px; border-radius:var(--radius); text-align:center;">
+          <div style="font-size:56px; margin-bottom:8px;">${docIcons[doc.type] || '📄'}</div>
+          <h3 style="font-size:1rem; font-weight:700;">${doc.name}</h3>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><label>Type</label><p>${doc.type}</p></div>
+          <div class="info-item"><label>Date</label><p>${formatDate(doc.date)}</p></div>
+          <div class="info-item"><label>Médecin</label><p>${doc.doctor}</p></div>
+        </div>
+        ${doc.description ? `
+          <div class="info-item" style="grid-column:1/-1;">
+            <label>Description</label>
+            <p>${doc.description}</p>
+          </div>
+        ` : ''}
+        <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius-sm); padding:14px; font-size:0.82rem; color:var(--info);">
+          ℹ️ Le document complet est disponible auprès de votre équipe médicale ou via votre espace Mon Espace Santé.
+        </div>
+      </div>
+    `;
+    openModal('docModal');
+  }
+
+  function renderDocs(docs) {
+    const el = document.getElementById('docGrid');
+    if (docs.length === 0) {
+      el.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-state-icon">📁</div>
+        <h3>Aucun document dans cette catégorie</h3>
+      </div>`;
+      return;
+    }
+    el.innerHTML = docs.map(d => `
+      <div class="doc-card" onclick='openDoc(${JSON.stringify(d)})'>
+        <div class="doc-icon">${docIcons[d.type] || '📄'}</div>
+        <h4>${d.name}</h4>
+        <div class="doc-meta">${d.doctor}</div>
+        <div class="doc-meta">${formatDate(d.date)}</div>
+        <span class="doc-type-badge">${d.type}</span>
+      </div>
+    `).join('');
+  }
+
+  async function loadDocuments() {
+    try {
+      allDocs = await apiFetch('/patients');
+      renderDocs(allDocs);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  loadDocuments();
+</script>
+</body>
+</html>

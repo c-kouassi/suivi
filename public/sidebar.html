@@ -1,0 +1,66 @@
+<!-- Composant Sidebar réutilisable - inclus via JS -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🏥</div>
+    <div class="sidebar-logo-text">
+      <h2>SuiviPatient</h2>
+      <span>Post-hospitalisation</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Principal</span>
+
+    <div class="nav-link" data-href="/dashboard">
+      <span class="nav-icon">🏠</span>
+      Tableau de bord
+    </div>
+
+    <div class="nav-link" data-href="/chat">
+      <span class="nav-icon">🤖</span>
+      Assistant IA
+    </div>
+
+    <span class="nav-section-label">Santé</span>
+
+    <div class="nav-link" data-href="/symptoms">
+      <span class="nav-icon">📊</span>
+      Suivi symptômes
+    </div>
+
+    <div class="nav-link" data-href="/medications">
+      <span class="nav-icon">💊</span>
+      Médicaments
+    </div>
+
+    <div class="nav-link" data-href="/appointments">
+      <span class="nav-icon">📅</span>
+      Rendez-vous
+    </div>
+
+    <span class="nav-section-label">Dossier médical</span>
+
+    <div class="nav-link" data-href="/documents">
+      <span class="nav-icon">📁</span>
+      Documents
+    </div>
+
+    <div class="nav-link" data-href="/profile">
+      <span class="nav-icon">👤</span>
+      Mon profil
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="patient-card" onclick="window.location.href='/profile'">
+      <div class="avatar" id="sidebarAvatar">JD</div>
+      <div class="patient-info">
+        <h4 id="sidebarName">Chargement...</h4>
+        <span id="sidebarRole">Patient</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">
+      🚪 Se déconnecter
+    </button>
+  </div>
+</nav>

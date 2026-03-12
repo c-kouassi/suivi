@@ -1,0 +1,313 @@
+{
+  "users": [
+    {
+      "id": "patient-001",
+      "email": "jean.dupont@email.com",
+      "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "role": "patient",
+      "profile": {
+        "firstName": "Jean",
+        "lastName": "Dupont",
+        "dateOfBirth": "1968-03-15",
+        "phone": "06 12 34 56 78",
+        "address": "12 rue des Lilas, 75010 Paris",
+        "hospitalDischargeDate": "2026-03-05",
+        "diagnosis": "Pontage coronarien",
+        "treatingDoctor": "Dr. Sophie Martin",
+        "hospitalStay": "CHU Paris Nord - Service Cardiologie",
+        "avatar": "JD"
+      }
+    },
+    {
+      "id": "doctor-001",
+      "email": "sophie.martin@hopital.fr",
+      "password": "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi",
+      "role": "doctor",
+      "profile": {
+        "firstName": "Sophie",
+        "lastName": "Martin",
+        "specialty": "Cardiologie",
+        "phone": "01 23 45 67 89",
+        "avatar": "SM"
+      }
+    }
+  ],
+  "appointments": [
+    {
+      "id": "apt-001",
+      "patientId": "patient-001",
+      "doctorId": "doctor-001",
+      "doctorName": "Dr. Sophie Martin",
+      "specialty": "Cardiologie",
+      "date": "2026-03-18",
+      "time": "14:30",
+      "location": "CHU Paris Nord - Consultation cardiologie, Bât. B",
+      "type": "Suivi post-opératoire",
+      "status": "confirmed",
+      "notes": "Contrôle ECG et bilan sanguin requis avant la consultation"
+    },
+    {
+      "id": "apt-002",
+      "patientId": "patient-001",
+      "doctorId": "doctor-002",
+      "doctorName": "Dr. Marc Lebrun",
+      "specialty": "Kinésithérapie",
+      "date": "2026-03-14",
+      "time": "09:00",
+      "location": "Cabinet Kinésithérapie, 8 av. de la République, Paris 11e",
+      "type": "Rééducation cardiaque",
+      "status": "confirmed",
+      "notes": "Séance de rééducation respiratoire"
+    },
+    {
+      "id": "apt-003",
+      "patientId": "patient-001",
+      "doctorId": "doctor-003",
+      "doctorName": "Dr. Anne Petit",
+      "specialty": "Psychiatrie",
+      "date": "2026-03-25",
+      "time": "11:00",
+      "location": "Cabinet médical, 45 rue du Faubourg Saint-Antoine, Paris 12e",
+      "type": "Suivi psychologique",
+      "status": "pending",
+      "notes": ""
+    }
+  ],
+  "medications": [
+    {
+      "id": "med-001",
+      "patientId": "patient-001",
+      "name": "Aspirine",
+      "dosage": "100 mg",
+      "frequency": "1 fois par jour",
+      "times": [
+        "08:00"
+      ],
+      "startDate": "2026-03-05",
+      "endDate": null,
+      "indication": "Anticoagulant",
+      "prescribedBy": "Dr. Sophie Martin",
+      "instructions": "Prendre pendant le repas",
+      "stock": 25,
+      "color": "#E74C3C"
+    },
+    {
+      "id": "med-002",
+      "patientId": "patient-001",
+      "name": "Bisoprolol",
+      "dosage": "5 mg",
+      "frequency": "1 fois par jour",
+      "times": [
+        "08:00"
+      ],
+      "startDate": "2026-03-05",
+      "endDate": null,
+      "indication": "Bêtabloquant - régulation du rythme cardiaque",
+      "prescribedBy": "Dr. Sophie Martin",
+      "instructions": "Ne pas arrêter sans avis médical",
+      "stock": 25,
+      "color": "#3498DB"
+    },
+    {
+      "id": "med-003",
+      "patientId": "patient-001",
+      "name": "Ramipril",
+      "dosage": "5 mg",
+      "frequency": "1 fois par jour",
+      "times": [
+        "20:00"
+      ],
+      "startDate": "2026-03-05",
+      "endDate": null,
+      "indication": "Inhibiteur ECA - protection cardiaque",
+      "prescribedBy": "Dr. Sophie Martin",
+      "instructions": "Prendre le soir au coucher",
+      "stock": 25,
+      "color": "#2ECC71"
+    },
+    {
+      "id": "med-004",
+      "patientId": "patient-001",
+      "name": "Atorvastatine",
+      "dosage": "40 mg",
+      "frequency": "1 fois par jour",
+      "times": [
+        "20:00"
+      ],
+      "startDate": "2026-03-05",
+      "endDate": null,
+      "indication": "Statine - contrôle du cholestérol",
+      "prescribedBy": "Dr. Sophie Martin",
+      "instructions": "Prendre le soir, éviter le pamplemousse",
+      "stock": 25,
+      "color": "#9B59B6"
+    }
+  ],
+  "symptoms": [
+    {
+      "id": "sym-001",
+      "patientId": "patient-001",
+      "date": "2026-03-11",
+      "time": "09:15",
+      "symptoms": [
+        {
+          "name": "Fatigue",
+          "severity": 3
+        },
+        {
+          "name": "Essoufflement",
+          "severity": 2
+        }
+      ],
+      "heartRate": 72,
+      "bloodPressure": "125/80",
+      "temperature": 36.8,
+      "oxygenSaturation": 97,
+      "weight": 82,
+      "notes": "Bonne nuit de sommeil, légère fatigue le matin",
+      "mood": "Bien"
+    },
+    {
+      "id": "sym-002",
+      "patientId": "patient-001",
+      "date": "2026-03-10",
+      "time": "08:30",
+      "symptoms": [
+        {
+          "name": "Douleur thoracique",
+          "severity": 2
+        },
+        {
+          "name": "Fatigue",
+          "severity": 4
+        }
+      ],
+      "heartRate": 78,
+      "bloodPressure": "130/85",
+      "temperature": 37.1,
+      "oxygenSaturation": 96,
+      "weight": 82.5,
+      "notes": "Légère douleur au niveau de la cicatrice",
+      "mood": "Moyen"
+    },
+    {
+      "id": "sym-003",
+      "patientId": "patient-001",
+      "date": "2026-03-09",
+      "time": "09:00",
+      "symptoms": [
+        {
+          "name": "Fatigue",
+          "severity": 2
+        }
+      ],
+      "heartRate": 70,
+      "bloodPressure": "122/78",
+      "temperature": 36.7,
+      "oxygenSaturation": 98,
+      "weight": 83,
+      "notes": "Je me sens mieux aujourd'hui",
+      "mood": "Bien"
+    },
+    {
+      "id": "sym-cb783f26-c1ca-48e2-b4fe-cb916e6f343f",
+      "patientId": "patient-001",
+      "date": "2026-03-12",
+      "time": "20:09",
+      "symptoms": [],
+      "heartRate": null,
+      "bloodPressure": "",
+      "temperature": null,
+      "oxygenSaturation": null,
+      "weight": null,
+      "notes": "",
+      "mood": "Moyen"
+    }
+  ],
+  "chatMessages": [
+    {
+      "id": "msg-001",
+      "patientId": "patient-001",
+      "role": "assistant",
+      "content": "Bonjour Jean ! Je suis votre assistant IA post-hospitalisation. Je suis là pour vous accompagner dans votre rétablissement après votre pontage coronarien. Comment vous sentez-vous aujourd'hui ?",
+      "timestamp": "2026-03-05T10:00:00Z"
+    },
+    {
+      "id": "msg-9ed54243-8f75-498b-a9b7-4089fc737930",
+      "patientId": "patient-001",
+      "role": "user",
+      "content": "hi",
+      "timestamp": "2026-03-12T19:06:58.931Z"
+    },
+    {
+      "id": "msg-b1162406-de8a-494f-ac3b-0152067e223d",
+      "patientId": "patient-001",
+      "role": "assistant",
+      "content": "Merci pour votre message. Je comprends votre préoccupation concernant votre rétablissement.\n\nPour des questions spécifiques à votre état de santé, je vous recommande de :\n\n1. **Contacter votre médecin traitant** - Dr. Sophie Martin : 01 23 45 67 89\n2. **Utiliser la messagerie** de l'application pour envoyer un message à votre équipe médicale\n3. **Consulter les urgences** si vous ressentez des symptômes alarmants (appel 15)\n\nJe peux vous aider sur des sujets comme :\n- Vos médicaments, votre alimentation, votre activité physique\n- Les soins de cicatrice, la gestion de la fatigue\n- Vos rendez-vous médicaux\n\nReformulez votre question et je ferai de mon mieux pour vous aider ! 😊",
+      "timestamp": "2026-03-12T19:06:59.431Z"
+    },
+    {
+      "id": "msg-ea130144-bd3e-4541-a6a6-83750643a0d2",
+      "patientId": "patient-001",
+      "role": "user",
+      "content": "Mes médicaments",
+      "timestamp": "2026-03-12T19:08:46.246Z"
+    },
+    {
+      "id": "msg-fcbd8635-196d-48ae-be59-b1d7c658d0c9",
+      "patientId": "patient-001",
+      "role": "assistant",
+      "content": "**Gestion de vos médicaments** 💊\n\nVos médicaments post-opératoires sont essentiels à votre rétablissement :\n\n- Prenez-les exactement comme prescrit par votre médecin\n- Ne modifiez jamais la dose sans avis médical\n- En cas d'oubli : prenez le médicament dès que possible, sauf si l'heure suivante approche\n- Consultez l'onglet **Médicaments** pour voir votre planning complet\n\n🔔 Activez les rappels dans l'application pour ne jamais oublier une prise.\n\nVous avez des questions sur un médicament spécifique ?",
+      "timestamp": "2026-03-12T19:08:46.746Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "doc-001",
+      "patientId": "patient-001",
+      "name": "Compte rendu opératoire",
+      "type": "Chirurgie",
+      "date": "2026-03-05",
+      "doctor": "Dr. Sophie Martin",
+      "description": "Compte rendu du pontage coronarien réalisé le 05/03/2026"
+    },
+    {
+      "id": "doc-002",
+      "patientId": "patient-001",
+      "name": "Ordonnance de sortie",
+      "type": "Ordonnance",
+      "date": "2026-03-08",
+      "doctor": "Dr. Sophie Martin",
+      "description": "Traitement médicamenteux post-opératoire"
+    },
+    {
+      "id": "doc-003",
+      "patientId": "patient-001",
+      "name": "Résultats ECG",
+      "type": "Examen",
+      "date": "2026-03-10",
+      "doctor": "Dr. Sophie Martin",
+      "description": "Électrocardiogramme de contrôle"
+    }
+  ],
+  "notifications": [
+    {
+      "id": "notif-001",
+      "patientId": "patient-001",
+      "type": "medication",
+      "title": "Rappel médicament",
+      "message": "Il est l'heure de prendre votre Aspirine 100mg",
+      "timestamp": "2026-03-12T08:00:00Z",
+      "read": false
+    },
+    {
+      "id": "notif-002",
+      "patientId": "patient-001",
+      "type": "appointment",
+      "title": "Rendez-vous demain",
+      "message": "Rappel : Consultation cardiologie avec Dr. Sophie Martin le 18/03 à 14h30",
+      "timestamp": "2026-03-12T09:00:00Z",
+      "read": false
+    }
+  ]
+}

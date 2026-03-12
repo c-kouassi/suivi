@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Suivi symptômes</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link active" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>📊 Suivi des symptômes</h1>
+        <p>Enregistrez vos constantes et symptômes quotidiens</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal('symptomModal')">
+          ➕ Saisir aujourd'hui
+        </button>
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="dashboard-grid-3">
+
+        <!-- Historique -->
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📋 Historique des relevés</span>
+              <span class="text-muted" id="historyCount"></span>
+            </div>
+            <div class="card-body" id="symptomHistory">
+              <div class="empty-state">
+                <div class="empty-state-icon">📊</div>
+                <h3>Chargement...</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar stats -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+
+          <!-- Alerte -->
+          <div class="card" style="border-color:rgba(239,68,68,0.3); background:rgba(239,68,68,0.04);">
+            <div class="card-body" style="padding:20px;">
+              <h4 style="font-size:0.9rem; font-weight:700; color:var(--danger); margin-bottom:10px;">🚨 Signes d'alerte</h4>
+              <p style="font-size:0.78rem; color:var(--text-secondary); line-height:1.7; margin-bottom:12px;">
+                Contactez immédiatement le <strong>15</strong> si vous ressentez :
+              </p>
+              <ul style="font-size:0.78rem; color:var(--text-secondary); padding-left:16px; line-height:2;">
+                <li>Douleur thoracique intense</li>
+                <li>Essoufflement soudain</li>
+                <li>Fièvre &gt; 38.5°C</li>
+                <li>Plaie qui s'ouvre</li>
+                <li>Malaise ou perte connaissance</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Valeurs normales -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📏 Valeurs de référence</span>
+            </div>
+            <div class="card-body" style="padding:16px;">
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:8px; background:var(--surface-2); border-radius:8px;">
+                  <span>❤️ FC</span><span style="font-weight:700; color:var(--success)">50–100 bpm</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:8px; background:var(--surface-2); border-radius:8px;">
+                  <span>🩸 Tension</span><span style="font-weight:700; color:var(--success)">&lt;140/90</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:8px; background:var(--surface-2); border-radius:8px;">
+                  <span>🌡️ Température</span><span style="font-weight:700; color:var(--success)">36–37.5°C</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.82rem; padding:8px; background:var(--surface-2); border-radius:8px;">
+                  <span>💨 SpO₂</span><span style="font-weight:700; color:var(--success)">&gt;95%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tendance -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📈 Tendance (7j)</span>
+            </div>
+            <div class="card-body" id="trendData" style="padding:16px;">
+              <p class="text-muted text-center" style="padding:20px 0;">Enregistrez des données pour voir la tendance</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Saisie Symptômes -->
+<div class="modal-overlay" id="symptomModal">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <h3>📊 Relevé du jour</h3>
+      <button class="modal-close" onclick="closeModal('symptomModal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Humeur -->
+      <div class="form-group">
+        <label>Comment vous sentez-vous globalement ?</label>
+        <div class="mood-selector">
+          <div class="mood-option" id="mood-bien" onclick="selectMood('Bien')">
+            <span class="mood-emoji">😊</span>Bien
+          </div>
+          <div class="mood-option" id="mood-moyen" onclick="selectMood('Moyen')">
+            <span class="mood-emoji">😐</span>Moyen
+          </div>
+          <div class="mood-option" id="mood-mal" onclick="selectMood('Mal')">
+            <span class="mood-emoji">😞</span>Mal
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Symptômes -->
+      <div class="form-group">
+        <label>Symptômes ressentis (sélectionnez ceux qui s'appliquent)</label>
+        <div class="symptom-chips" id="symptomChips">
+          <div class="symptom-chip" data-sym="Fatigue" onclick="toggleSymptom(this)">😴 Fatigue</div>
+          <div class="symptom-chip" data-sym="Essoufflement" onclick="toggleSymptom(this)">💨 Essoufflement</div>
+          <div class="symptom-chip" data-sym="Douleur thoracique" onclick="toggleSymptom(this)">💔 Douleur thoracique</div>
+          <div class="symptom-chip" data-sym="Vertiges" onclick="toggleSymptom(this)">🌀 Vertiges</div>
+          <div class="symptom-chip" data-sym="Palpitations" onclick="toggleSymptom(this)">❤️ Palpitations</div>
+          <div class="symptom-chip" data-sym="Nausées" onclick="toggleSymptom(this)">🤢 Nausées</div>
+          <div class="symptom-chip" data-sym="Douleur cicatrice" onclick="toggleSymptom(this)">🩹 Douleur cicatrice</div>
+          <div class="symptom-chip" data-sym="Œdème (gonflements)" onclick="toggleSymptom(this)">🦵 Œdèmes</div>
+          <div class="symptom-chip" data-sym="Insomnie" onclick="toggleSymptom(this)">🌙 Insomnie</div>
+          <div class="symptom-chip" data-sym="Anxiété" onclick="toggleSymptom(this)">😰 Anxiété</div>
+        </div>
+      </div>
+
+      <!-- Sévérité (dynamique) -->
+      <div class="form-group" id="severitySection" style="display:none;">
+        <label>Intensité des symptômes (1 = léger, 5 = sévère)</label>
+        <div class="severity-groups" id="severityGroups"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Constantes -->
+      <label style="font-size:0.875rem; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:12px;">
+        Constantes vitales
+      </label>
+      <div class="vitals-grid">
+        <div class="vital-input-card">
+          <div class="vital-icon">❤️</div>
+          <label>Pouls (bpm)</label>
+          <input type="number" class="form-control" id="vitHR" placeholder="72" min="30" max="250">
+        </div>
+        <div class="vital-input-card">
+          <div class="vital-icon">🩸</div>
+          <label>Tension (mmHg)</label>
+          <input type="text" class="form-control" id="vitBP" placeholder="120/80">
+        </div>
+        <div class="vital-input-card">
+          <div class="vital-icon">🌡️</div>
+          <label>Température (°C)</label>
+          <input type="number" class="form-control" id="vitTemp" placeholder="37.0" step="0.1" min="34" max="42">
+        </div>
+        <div class="vital-input-card">
+          <div class="vital-icon">💨</div>
+          <label>SpO₂ (%)</label>
+          <input type="number" class="form-control" id="vitO2" placeholder="97" min="70" max="100">
+        </div>
+        <div class="vital-input-card">
+          <div class="vital-icon">⚖️</div>
+          <label>Poids (kg)</label>
+          <input type="number" class="form-control" id="vitWeight" placeholder="75" step="0.1" min="30" max="300">
+        </div>
+      </div>
+
+      <div class="form-group mt-4">
+        <label>Notes (optionnel)</label>
+        <textarea class="form-control" id="symNotes" rows="3" placeholder="Ajoutez des informations complémentaires..."></textarea>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('symptomModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSymptoms()">✅ Enregistrer le relevé</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  let selectedMood = 'Moyen';
+  let selectedSymptoms = [];
+
+  function selectMood(mood) {
+    selectedMood = mood;
+    document.querySelectorAll('.mood-option').forEach(el => {
+      el.className = 'mood-option';
+    });
+    const key = mood.toLowerCase();
+    document.getElementById(`mood-${key}`).classList.add(`selected-${key}`);
+  }
+
+  selectMood('Moyen');
+
+  function toggleSymptom(el) {
+    const sym = el.dataset.sym;
+    if (el.classList.contains('selected')) {
+      el.classList.remove('selected');
+      selectedSymptoms = selectedSymptoms.filter(s => s.name !== sym);
+    } else {
+      el.classList.add('selected');
+      selectedSymptoms.push({ name: sym, severity: 2 });
+    }
+    renderSeverity();
+  }
+
+  function renderSeverity() {
+    const section = document.getElementById('severitySection');
+    const groups = document.getElementById('severityGroups');
+    if (selectedSymptoms.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    groups.innerHTML = selectedSymptoms.map((s, i) => `
+      <div class="severity-item">
+        <label>${s.name}</label>
+        <input type="range" min="1" max="5" value="${s.severity}"
+          oninput="updateSeverity(${i}, this.value); document.getElementById('sev-val-${i}').textContent=this.value">
+        <div class="severity-value" id="sev-val-${i}">${s.severity}</div>
+      </div>
+    `).join('');
+  }
+
+  function updateSeverity(idx, val) {
+    selectedSymptoms[idx].severity = parseInt(val);
+  }
+
+  async function saveSymptoms() {
+    try {
+      const data = {
+        symptoms: selectedSymptoms,
+        heartRate: document.getElementById('vitHR').value ? parseInt(document.getElementById('vitHR').value) : null,
+        bloodPressure: document.getElementById('vitBP').value || '',
+        temperature: document.getElementById('vitTemp').value ? parseFloat(document.getElementById('vitTemp').value) : null,
+        oxygenSaturation: document.getElementById('vitO2').value ? parseInt(document.getElementById('vitO2').value) : null,
+        weight: document.getElementById('vitWeight').value ? parseFloat(document.getElementById('vitWeight').value) : null,
+        notes: document.getElementById('symNotes').value,
+        mood: selectedMood
+      };
+
+      await apiFetch('/symptoms', { method: 'POST', body: JSON.stringify(data) });
+      closeModal('symptomModal');
+      showToast('Relevé enregistré avec succès ! ✅', 'success');
+
+      // Reset form
+      selectedSymptoms = [];
+      document.querySelectorAll('.symptom-chip.selected').forEach(el => el.classList.remove('selected'));
+      renderSeverity();
+      selectMood('Moyen');
+      ['vitHR','vitBP','vitTemp','vitO2','vitWeight','symNotes'].forEach(id => document.getElementById(id).value = '');
+
+      await loadHistory();
+    } catch (err) {
+      showToast('Erreur : ' + err.message, 'error');
+    }
+  }
+
+  async function loadHistory() {
+    try {
+      const symptoms = await apiFetch('/symptoms');
+      document.getElementById('historyCount').textContent = `${symptoms.length} entrée${symptoms.length > 1 ? 's' : ''}`;
+
+      const el = document.getElementById('symptomHistory');
+      if (symptoms.length === 0) {
+        el.innerHTML = `<div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <h3>Aucun relevé</h3>
+          <p>Commencez dès aujourd'hui votre suivi quotidien</p>
+          <button class="btn btn-primary btn-sm" onclick="openModal('symptomModal')">Saisir maintenant</button>
+        </div>`;
+        return;
+      }
+
+      el.innerHTML = symptoms.map(s => `
+        <div class="log-card">
+          <div class="log-header">
+            <div>
+              <div style="font-weight:700; font-size:0.9rem;">${formatDate(s.date)}</div>
+              <div class="log-date">Enregistré à ${s.time}</div>
+            </div>
+            <span class="mood-badge mood-${s.mood.toLowerCase()}">${s.mood === 'Bien' ? '😊' : s.mood === 'Moyen' ? '😐' : '😞'} ${s.mood}</span>
+          </div>
+          <div class="log-vitals">
+            ${s.heartRate ? `<span class="vital-badge">❤️ ${s.heartRate} bpm</span>` : ''}
+            ${s.bloodPressure ? `<span class="vital-badge">🩸 ${s.bloodPressure}</span>` : ''}
+            ${s.temperature ? `<span class="vital-badge">🌡️ ${s.temperature}°C</span>` : ''}
+            ${s.oxygenSaturation ? `<span class="vital-badge">💨 ${s.oxygenSaturation}%</span>` : ''}
+            ${s.weight ? `<span class="vital-badge">⚖️ ${s.weight} kg</span>` : ''}
+          </div>
+          ${s.symptoms && s.symptoms.length > 0 ? `
+            <div class="log-symptoms">
+              ${s.symptoms.map(sym => `
+                <span class="sym-tag sev-${sym.severity}">${sym.name} (${sym.severity}/5)</span>
+              `).join('')}
+            </div>
+          ` : '<p class="text-muted" style="font-size:0.78rem;">Aucun symptôme signalé</p>'}
+          ${s.notes ? `<p style="font-size:0.78rem;color:var(--text-secondary);margin-top:8px;font-style:italic">"${s.notes}"</p>` : ''}
+        </div>
+      `).join('');
+
+      // Render trends
+      renderTrends(symptoms.slice(0, 7).reverse());
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderTrends(data) {
+    if (data.length < 2) return;
+    const el = document.getElementById('trendData');
+
+    const last = data[data.length - 1];
+    const prev = data[data.length - 2];
+
+    let trends = [];
+    if (last.heartRate && prev.heartRate) {
+      const diff = last.heartRate - prev.heartRate;
+      trends.push({
+        label: '❤️ FC',
+        value: last.heartRate + ' bpm',
+        change: diff,
+        good: Math.abs(diff) <= 5
+      });
+    }
+    if (last.weight && prev.weight) {
+      const diff = (last.weight - prev.weight).toFixed(1);
+      trends.push({
+        label: '⚖️ Poids',
+        value: last.weight + ' kg',
+        change: diff,
+        good: Math.abs(diff) <= 1
+      });
+    }
+
+    if (trends.length === 0) {
+      el.innerHTML = '<p class="text-muted text-center" style="padding:12px 0;font-size:0.78rem;">Continuez à enregistrer pour voir les tendances</p>';
+      return;
+    }
+
+    el.innerHTML = trends.map(t => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:var(--surface-2); border-radius:8px; margin-bottom:8px; font-size:0.82rem;">
+        <span>${t.label}</span>
+        <div style="text-align:right;">
+          <span style="font-weight:700;">${t.value}</span>
+          <span style="font-size:0.72rem; color:${t.good ? 'var(--success)' : t.change > 0 ? 'var(--danger)' : 'var(--warning)'}">
+            ${t.change > 0 ? '↑ +' : '↓ '}${t.change}
+          </span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  loadHistory();
+</script>
+</body>
+</html>

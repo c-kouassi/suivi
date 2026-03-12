@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Médicaments</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .schedule-grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 8px; }
+    .schedule-hour { height: 24px; border-radius: 4px; background: var(--surface-3); position: relative; }
+    .schedule-hour.has-med { background: var(--primary); }
+    .schedule-hour:hover .schedule-tooltip { display: block; }
+    .schedule-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: var(--text-primary); color: white; font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; white-space: nowrap; z-index: 10; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link active" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>💊 Médicaments</h1>
+        <p>Gestion de votre traitement post-opératoire</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-primary" onclick="openModal('medModal')">➕ Ajouter un médicament</button>
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Planning horaire -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <span class="card-title">⏰ Planning des prises du jour</span>
+          <span class="text-muted" id="todayDate"></span>
+        </div>
+        <div class="card-body">
+          <div id="schedule">
+            <div style="display:grid; grid-template-columns: repeat(12, 1fr); gap:8px;" id="scheduleGrid">
+              <!-- Generated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Liste des médicaments -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Traitement en cours</span>
+          <span class="text-muted" id="medCount"></span>
+        </div>
+        <div class="card-body" id="medicationList">
+          <div class="empty-state">
+            <div class="empty-state-icon">💊</div>
+            <h3>Chargement...</h3>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Médicament -->
+<div class="modal-overlay" id="medModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="medModalTitle">💊 Ajouter un médicament</h3>
+      <button class="modal-close" onclick="closeModal('medModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editMedId">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nom du médicament *</label>
+          <input type="text" class="form-control" id="medName" placeholder="Ex: Aspirine" required>
+        </div>
+        <div class="form-group">
+          <label>Dosage *</label>
+          <input type="text" class="form-control" id="medDosage" placeholder="Ex: 100 mg">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fréquence *</label>
+          <select class="form-control" id="medFrequency">
+            <option>1 fois par jour</option>
+            <option>2 fois par jour</option>
+            <option>3 fois par jour</option>
+            <option>Au coucher</option>
+            <option>Selon besoin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Heure(s) de prise</label>
+          <input type="text" class="form-control" id="medTimes" placeholder="08:00, 20:00">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Indication (motif)</label>
+        <input type="text" class="form-control" id="medIndication" placeholder="Ex: Anticoagulant">
+      </div>
+      <div class="form-group">
+        <label>Instructions particulières</label>
+        <textarea class="form-control" id="medInstructions" rows="2" placeholder="Ex: Prendre pendant les repas"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date de début</label>
+          <input type="date" class="form-control" id="medStartDate">
+        </div>
+        <div class="form-group">
+          <label>Date de fin (optionnel)</label>
+          <input type="date" class="form-control" id="medEndDate">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Couleur d'identification</label>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;" id="colorPicker">
+          <div class="color-opt" data-color="#E74C3C" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#E74C3C;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-opt" data-color="#3498DB" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#3498DB;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-opt" data-color="#2ECC71" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#2ECC71;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-opt" data-color="#9B59B6" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#9B59B6;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-opt" data-color="#FF9F43" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#FF9F43;cursor:pointer;border:2px solid transparent;"></div>
+          <div class="color-opt" data-color="#00BFA5" onclick="selectColor(this)" style="width:28px;height:28px;border-radius:50%;background:#00BFA5;cursor:pointer;border:2px solid transparent;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('medModal')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMedication()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  let selectedColor = '#3498DB';
+  let editingId = null;
+
+  document.getElementById('todayDate').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+  function selectColor(el) {
+    document.querySelectorAll('.color-opt').forEach(c => c.style.border = '2px solid transparent');
+    el.style.border = '3px solid var(--text-primary)';
+    selectedColor = el.dataset.color;
+  }
+
+  function openAddModal() {
+    editingId = null;
+    document.getElementById('medModalTitle').textContent = '💊 Ajouter un médicament';
+    ['medName','medDosage','medTimes','medIndication','medInstructions','medStartDate','medEndDate'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('medFrequency').value = '1 fois par jour';
+    openModal('medModal');
+  }
+
+  function editMedication(med) {
+    editingId = med.id;
+    document.getElementById('medModalTitle').textContent = '✏️ Modifier le médicament';
+    document.getElementById('medName').value = med.name;
+    document.getElementById('medDosage').value = med.dosage;
+    document.getElementById('medFrequency').value = med.frequency;
+    document.getElementById('medTimes').value = med.times.join(', ');
+    document.getElementById('medIndication').value = med.indication || '';
+    document.getElementById('medInstructions').value = med.instructions || '';
+    document.getElementById('medStartDate').value = med.startDate || '';
+    document.getElementById('medEndDate').value = med.endDate || '';
+    selectedColor = med.color;
+    openModal('medModal');
+  }
+
+  async function saveMedication() {
+    const name = document.getElementById('medName').value.trim();
+    const dosage = document.getElementById('medDosage').value.trim();
+    if (!name || !dosage) return showToast('Nom et dosage requis', 'error');
+
+    const timesRaw = document.getElementById('medTimes').value;
+    const times = timesRaw ? timesRaw.split(',').map(t => t.trim()) : [];
+
+    const payload = {
+      name, dosage,
+      frequency: document.getElementById('medFrequency').value,
+      times,
+      indication: document.getElementById('medIndication').value,
+      instructions: document.getElementById('medInstructions').value,
+      startDate: document.getElementById('medStartDate').value,
+      endDate: document.getElementById('medEndDate').value || null,
+      color: selectedColor
+    };
+
+    try {
+      if (editingId) {
+        await apiFetch(`/medications/${editingId}`, { method: 'PUT', body: JSON.stringify(payload) });
+        showToast('Médicament mis à jour', 'success');
+      } else {
+        await apiFetch('/medications', { method: 'POST', body: JSON.stringify(payload) });
+        showToast('Médicament ajouté', 'success');
+      }
+      closeModal('medModal');
+      loadMedications();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function deleteMedication(id) {
+    if (!confirm('Supprimer ce médicament ?')) return;
+    try {
+      await apiFetch(`/medications/${id}`, { method: 'DELETE' });
+      showToast('Médicament supprimé', 'success');
+      loadMedications();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function loadMedications() {
+    try {
+      const meds = await apiFetch('/medications');
+      document.getElementById('medCount').textContent = `${meds.length} médicament${meds.length > 1 ? 's' : ''}`;
+
+      const el = document.getElementById('medicationList');
+      if (meds.length === 0) {
+        el.innerHTML = `<div class="empty-state">
+          <div class="empty-state-icon">💊</div>
+          <h3>Aucun médicament</h3>
+          <p>Ajoutez vos médicaments pour ne jamais en oublier une prise</p>
+          <button class="btn btn-primary btn-sm" onclick="openAddModal()">Ajouter un médicament</button>
+        </div>`;
+        renderSchedule([]);
+        return;
+      }
+
+      el.innerHTML = `<div class="med-list">${meds.map(m => `
+        <div class="med-card" style="border-left: 4px solid ${m.color}">
+          <div class="med-color" style="background:${m.color}20;">
+            <span style="font-size:22px;">💊</span>
+          </div>
+          <div class="med-info" style="flex:1;">
+            <h4>${m.name} <span style="font-weight:400; color:var(--text-muted); font-size:0.85rem;">${m.dosage}</span></h4>
+            <p>${m.frequency} · ${m.times.join(', ')}</p>
+            ${m.indication ? `<p style="font-size:0.75rem; color:var(--text-muted);">${m.indication}</p>` : ''}
+            ${m.instructions ? `<p style="font-size:0.75rem; color:var(--primary); margin-top:2px;">ℹ️ ${m.instructions}</p>` : ''}
+          </div>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end; flex-shrink:0;">
+            ${m.times.map(t => `<span class="med-time">${t}</span>`).join('')}
+            <div style="display:flex; gap:6px; margin-top:4px;">
+              <button class="btn btn-ghost btn-sm" onclick='editMedication(${JSON.stringify(m)})'>✏️</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteMedication('${m.id}')">🗑️</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+
+      renderSchedule(meds);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderSchedule(meds) {
+    const grid = document.getElementById('scheduleGrid');
+    const medsByHour = {};
+    meds.forEach(m => {
+      m.times.forEach(t => {
+        const hour = parseInt(t.split(':')[0]);
+        if (!medsByHour[hour]) medsByHour[hour] = [];
+        medsByHour[hour].push(m);
+      });
+    });
+
+    grid.innerHTML = Array.from({ length: 24 }, (_, h) => {
+      const hasMed = medsByHour[h] && medsByHour[h].length > 0;
+      const medNames = hasMed ? medsByHour[h].map(m => m.name).join(', ') : '';
+      const label = `${String(h).padStart(2,'0')}h`;
+      return `
+        <div style="text-align:center; font-size:0.68rem; color:var(--text-muted);">${label}</div>
+      `;
+    }).join('') + `<div style="grid-column:1/-1; display:grid; grid-template-columns:repeat(24,1fr); gap:3px; margin-top:4px;">` +
+    Array.from({ length: 24 }, (_, h) => {
+      const hasMed = medsByHour[h] && medsByHour[h].length > 0;
+      const color = hasMed ? medsByHour[h][0].color : 'var(--surface-3)';
+      const tooltip = hasMed ? medsByHour[h].map(m => `${m.name} ${m.dosage}`).join(' + ') : '';
+      return `<div style="height:28px; border-radius:4px; background:${color}; cursor:${hasMed ? 'pointer' : 'default'}; position:relative; opacity:${hasMed ? 1 : 0.3};" title="${tooltip}"></div>`;
+    }).join('') + `</div>`;
+  }
+
+  loadMedications();
+</script>
+</body>
+</html>

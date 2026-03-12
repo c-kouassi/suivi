@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Tableau de bord</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text">
+        <h2>SuiviPatient</h2>
+        <span>Post-hospitalisation</span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link active" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info">
+          <h4 id="sidebarName">Chargement...</h4>
+          <span id="sidebarRole">Patient</span>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1 id="welcomeTitle">Bonjour 👋</h1>
+        <p id="welcomeSub">Voici votre bilan de santé du jour</p>
+      </div>
+      <div class="topbar-right">
+        <div class="notification-btn" onclick="window.location.href='/appointments'">
+          <span>🔔</span>
+          <span class="notif-dot" id="notifDot" style="display:none"></span>
+        </div>
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Recovery progress -->
+      <div class="recovery-bar" id="recoverySection">
+        <div class="recovery-header">
+          <h4>🏥 Progression du rétablissement</h4>
+          <span id="recoveryPercent">0%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="recoveryFill" style="width:0%"></div>
+        </div>
+        <p id="recoveryText" class="text-muted mt-2" style="font-size:0.78rem;"></p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-icon blue">💊</div>
+          <div class="stat-info">
+            <h3 id="statMeds">-</h3>
+            <p>Médicaments</p>
+            <span class="stat-change neutral">du jour</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">📅</div>
+          <div class="stat-info">
+            <h3 id="statApts">-</h3>
+            <p>Rendez-vous</p>
+            <span class="stat-change neutral">à venir</span>
+          </div>
+        </div>
+        <div class="stat-card" id="heartRateCard">
+          <div class="stat-icon red">❤️</div>
+          <div class="stat-info">
+            <h3 id="statHR">-</h3>
+            <p>Rythme cardiaque</p>
+            <span class="stat-change neutral">bpm</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">⏱️</div>
+          <div class="stat-info">
+            <h3 id="statDays">-</h3>
+            <p>Jours de convalescence</p>
+            <span class="stat-change neutral" id="statDaysLabel">depuis la sortie</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grid principal -->
+      <div class="dashboard-grid">
+
+        <!-- Prochains RDV -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📅 Prochains rendez-vous</span>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='/appointments'">Voir tout</button>
+          </div>
+          <div class="card-body" id="aptList">
+            <div class="empty-state">
+              <div class="empty-state-icon">📅</div>
+              <h3>Chargement...</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Santé du jour -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">❤️ Santé du jour</span>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='/symptoms'">Saisir</button>
+          </div>
+          <div class="card-body">
+            <div class="health-score" id="healthScore">
+              <div class="score-ring">
+                <svg width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="56" fill="none" stroke="#E2E8F0" stroke-width="10"/>
+                  <circle cx="70" cy="70" r="56" fill="none" stroke="var(--primary)" stroke-width="10"
+                    stroke-dasharray="351.86" id="healthCircle" stroke-dashoffset="351.86"
+                    stroke-linecap="round"/>
+                </svg>
+                <div class="score-ring-text">
+                  <span class="score-num" id="healthNum">-</span>
+                  <span class="score-label">Score</span>
+                </div>
+              </div>
+            </div>
+            <div class="health-metrics" id="healthMetrics">
+              <div class="health-metric">
+                <span class="health-metric-icon">❤️</span>
+                <span class="health-metric-label">Fréquence cardiaque</span>
+                <span class="health-metric-value" id="hmHR">-</span>
+                <span class="health-metric-status" id="hmHRStatus"></span>
+              </div>
+              <div class="health-metric">
+                <span class="health-metric-icon">🩸</span>
+                <span class="health-metric-label">Tension artérielle</span>
+                <span class="health-metric-value" id="hmBP">-</span>
+                <span class="health-metric-status" id="hmBPStatus"></span>
+              </div>
+              <div class="health-metric">
+                <span class="health-metric-icon">🌡️</span>
+                <span class="health-metric-label">Température</span>
+                <span class="health-metric-value" id="hmTemp">-</span>
+                <span class="health-metric-status" id="hmTempStatus"></span>
+              </div>
+              <div class="health-metric">
+                <span class="health-metric-icon">💨</span>
+                <span class="health-metric-label">Saturation O₂</span>
+                <span class="health-metric-value" id="hmO2">-</span>
+                <span class="health-metric-status" id="hmO2Status"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Médicaments du jour -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">💊 Médicaments du jour</span>
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='/medications'">Gérer</button>
+          </div>
+          <div class="card-body" id="medList">
+            <div class="empty-state">
+              <div class="empty-state-icon">💊</div>
+              <h3>Chargement...</h3>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assistant IA -->
+        <div class="card" style="background:linear-gradient(135deg,#1B6CA8,#00BFA5); color:white; border:none;">
+          <div class="card-body" style="padding:28px;">
+            <div style="font-size:40px; margin-bottom:12px;">🤖</div>
+            <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:8px;">Assistant IA post-hospitalisation</h3>
+            <p style="font-size:0.85rem; opacity:0.9; margin-bottom:20px; line-height:1.6;">
+              Posez vos questions sur votre rétablissement, vos médicaments, votre alimentation et bien plus.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
+              <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:10px 14px; font-size:0.8rem; cursor:pointer;" onclick="window.location.href='/chat'">
+                "Quels sont les effets de mes médicaments ?"
+              </div>
+              <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:10px 14px; font-size:0.8rem; cursor:pointer;" onclick="window.location.href='/chat'">
+                "Comment soigner ma cicatrice ?"
+              </div>
+            </div>
+            <button class="btn" style="background:white; color:var(--primary); font-weight:700;" onclick="window.location.href='/chat'">
+              💬 Démarrer une conversation
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  const user = getUser();
+
+  async function loadDashboard() {
+    // Welcome
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+    document.getElementById('welcomeTitle').textContent = `${greet} ${user.profile.firstName} 👋`;
+
+    // Recovery
+    const days = getDaysSinceDischarge(user.profile.hospitalDischargeDate);
+    const totalRecovery = 56; // 8 weeks typical recovery
+    const pct = Math.min(Math.round((days / totalRecovery) * 100), 100);
+    document.getElementById('recoveryPercent').textContent = pct + '%';
+    document.getElementById('recoveryFill').style.width = pct + '%';
+    document.getElementById('recoveryText').textContent =
+      `Jour ${days} de convalescence sur ~${totalRecovery} jours. ${
+        pct >= 100 ? 'Félicitations ! Rétablissement terminé.' : `Il reste environ ${totalRecovery - days} jours.`
+      }`;
+    document.getElementById('statDays').textContent = days;
+
+    // Load data in parallel
+    const [appointments, medications, latestSymptom] = await Promise.all([
+      apiFetch('/appointments'),
+      apiFetch('/medications'),
+      apiFetch('/symptoms/latest')
+    ]);
+
+    // Stats
+    document.getElementById('statMeds').textContent = medications.length;
+    const futureApts = appointments.filter(a => isFuture(a.date));
+    document.getElementById('statApts').textContent = futureApts.length;
+
+    if (latestSymptom && latestSymptom.heartRate) {
+      document.getElementById('statHR').textContent = latestSymptom.heartRate;
+    }
+
+    // Appointments
+    renderUpcomingApts(futureApts.slice(0, 3));
+
+    // Medications
+    renderMeds(medications.slice(0, 4));
+
+    // Health score
+    if (latestSymptom) {
+      renderHealthScore(latestSymptom);
+    } else {
+      document.getElementById('healthNum').textContent = 'N/A';
+      document.getElementById('hmHR').textContent = 'Non saisi';
+      document.getElementById('hmBP').textContent = 'Non saisi';
+      document.getElementById('hmTemp').textContent = 'Non saisi';
+      document.getElementById('hmO2').textContent = 'Non saisi';
+    }
+
+    // Notifications
+    const notifs = await apiFetch('/patients/notifications');
+    const unread = notifs.filter(n => !n.read);
+    if (unread.length > 0) document.getElementById('notifDot').style.display = 'block';
+  }
+
+  function renderUpcomingApts(apts) {
+    const el = document.getElementById('aptList');
+    if (apts.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>Aucun rendez-vous à venir</h3><p>Planifiez votre prochain rendez-vous médical</p><button class="btn btn-primary btn-sm" onclick="window.location.href='/appointments'">Planifier</button></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="apt-list">${apts.map(a => `
+      <div class="apt-card">
+        <div class="apt-date-box">
+          <div class="apt-day">${getDay(a.date)}</div>
+          <div class="apt-month">${getMonthShort(a.date)}</div>
+        </div>
+        <div class="apt-info">
+          <h4>${a.doctorName}</h4>
+          <div class="apt-meta">
+            <span>🏥 ${a.specialty || a.type}</span>
+            <span>⏰ ${a.time}</span>
+            ${a.location ? `<span>📍 ${a.location.substring(0, 40)}${a.location.length > 40 ? '...' : ''}</span>` : ''}
+          </div>
+        </div>
+        <span class="apt-status ${a.status}">${a.status === 'confirmed' ? 'Confirmé' : 'En attente'}</span>
+      </div>
+    `).join('')}</div>`;
+  }
+
+  function renderMeds(meds) {
+    const el = document.getElementById('medList');
+    if (meds.length === 0) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💊</div><h3>Aucun médicament</h3></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="med-list">${meds.map(m => `
+      <div class="med-card">
+        <div class="med-color" style="background:${m.color}20; color:${m.color}">💊</div>
+        <div class="med-info">
+          <h4>${m.name} <small style="font-weight:400;color:var(--text-muted)">${m.dosage}</small></h4>
+          <p>${m.frequency} · ${m.times.join(', ')}</p>
+        </div>
+        <span class="med-time">${m.times[0] || ''}</span>
+      </div>
+    `).join('')}</div>`;
+  }
+
+  function renderHealthScore(sym) {
+    const hr = sym.heartRate;
+    const temp = sym.temperature;
+    const o2 = sym.oxygenSaturation;
+
+    let score = 100;
+    let warnings = 0;
+
+    // Heart rate
+    if (hr) {
+      const hrOk = hr >= 50 && hr <= 100;
+      document.getElementById('hmHR').textContent = hr + ' bpm';
+      document.getElementById('hmHRStatus').textContent = hrOk ? 'Normal' : 'Attention';
+      document.getElementById('hmHRStatus').className = 'health-metric-status ' + (hrOk ? 'status-normal' : 'status-warning');
+      document.getElementById('statHR').textContent = hr;
+      if (!hrOk) { score -= 20; warnings++; }
+    }
+
+    // Blood pressure
+    if (sym.bloodPressure) {
+      document.getElementById('hmBP').textContent = sym.bloodPressure;
+      const [sys] = sym.bloodPressure.split('/').map(Number);
+      const bpOk = sys >= 90 && sys <= 140;
+      document.getElementById('hmBPStatus').textContent = bpOk ? 'Normal' : 'Attention';
+      document.getElementById('hmBPStatus').className = 'health-metric-status ' + (bpOk ? 'status-normal' : 'status-warning');
+      if (!bpOk) { score -= 15; warnings++; }
+    }
+
+    // Temperature
+    if (temp) {
+      document.getElementById('hmTemp').textContent = temp + ' °C';
+      const tempOk = temp >= 36 && temp <= 37.5;
+      document.getElementById('hmTempStatus').textContent = tempOk ? 'Normal' : temp > 38 ? 'Fièvre' : 'Attention';
+      document.getElementById('hmTempStatus').className = 'health-metric-status ' + (tempOk ? 'status-normal' : temp > 38 ? 'status-danger' : 'status-warning');
+      if (!tempOk) { score -= 20; warnings++; }
+    }
+
+    // O2
+    if (o2) {
+      document.getElementById('hmO2').textContent = o2 + ' %';
+      const o2Ok = o2 >= 95;
+      document.getElementById('hmO2Status').textContent = o2Ok ? 'Normal' : 'Bas';
+      document.getElementById('hmO2Status').className = 'health-metric-status ' + (o2Ok ? 'status-normal' : 'status-danger');
+      if (!o2Ok) { score -= 20; warnings++; }
+    }
+
+    // Symptoms severity
+    if (sym.symptoms) {
+      sym.symptoms.forEach(s => { if (s.severity >= 4) { score -= 10; } });
+    }
+
+    score = Math.max(0, score);
+    document.getElementById('healthNum').textContent = score;
+
+    // Circle animation
+    const circumference = 351.86;
+    const offset = circumference - (score / 100) * circumference;
+    setTimeout(() => {
+      document.getElementById('healthCircle').style.transition = 'stroke-dashoffset 1s ease';
+      document.getElementById('healthCircle').setAttribute('stroke-dashoffset', offset);
+      const color = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warning)' : 'var(--danger)';
+      document.getElementById('healthCircle').style.stroke = color;
+    }, 100);
+  }
+
+  loadDashboard().catch(console.error);
+</script>
+</body>
+</html>

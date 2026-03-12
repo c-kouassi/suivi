@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Mon Profil</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link active" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>👤 Mon profil</h1>
+        <p>Informations personnelles et médicales</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- Profile Header -->
+      <div class="profile-header mb-6" id="profileHeader">
+        <div class="profile-avatar" id="profileAvatar">JD</div>
+        <div class="profile-info">
+          <h2 id="profileName">Chargement...</h2>
+          <p id="profileDiagnosis"></p>
+          <div class="profile-tags" id="profileTags"></div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+
+        <!-- Informations personnelles -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">👤 Informations personnelles</span>
+          </div>
+          <div class="card-body">
+            <div class="info-grid" id="personalInfo">
+              <div class="info-item"><label>Chargement</label><p>...</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Informations médicales -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">🏥 Informations médicales</span>
+          </div>
+          <div class="card-body">
+            <div class="info-grid" id="medicalInfo">
+              <div class="info-item"><label>Chargement</label><p>...</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Résumé du compte -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📊 Résumé de mon suivi</span>
+          </div>
+          <div class="card-body">
+            <div class="info-grid" id="summaryInfo">
+              <!-- Loaded dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions et Sécurité -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">⚙️ Compte et sécurité</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="padding:16px; background:var(--surface-2); border-radius:var(--radius-sm);">
+                <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">Données & Confidentialité</h4>
+                <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Vos données de santé sont chiffrées et sécurisées. Seul vous et votre équipe médicale y avez accès.</p>
+                <button class="btn btn-outline btn-sm">Voir la politique de confidentialité</button>
+              </div>
+
+              <div style="padding:16px; background:rgba(239,68,68,0.04); border:1px solid rgba(239,68,68,0.15); border-radius:var(--radius-sm);">
+                <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:4px; color:var(--danger);">Zone de danger</h4>
+                <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Ces actions sont irréversibles. Procédez avec précaution.</p>
+                <button class="btn btn-danger btn-sm" onclick="logout()">🚪 Se déconnecter</button>
+              </div>
+
+              <div style="padding:16px; background:var(--surface-2); border-radius:var(--radius-sm);">
+                <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">Partager avec mon médecin</h4>
+                <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Partagez votre dossier de suivi avec Dr. Sophie Martin</p>
+                <button class="btn btn-secondary btn-sm" onclick="shareWithDoctor()">📤 Partager le dossier</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  async function loadProfile() {
+    const user = getUser();
+    if (!user) return;
+
+    const p = user.profile;
+
+    document.getElementById('profileAvatar').textContent = p.avatar || '👤';
+    document.getElementById('profileName').textContent = `${p.firstName} ${p.lastName}`;
+    document.getElementById('profileDiagnosis').textContent = p.diagnosis || '';
+
+    document.getElementById('profileTags').innerHTML = [
+      p.treatingDoctor ? `<span class="profile-tag">👨‍⚕️ ${p.treatingDoctor}</span>` : '',
+      p.hospitalDischargeDate ? `<span class="profile-tag">📅 Sortie le ${formatDate(p.hospitalDischargeDate)}</span>` : '',
+      user.role === 'patient' ? '<span class="profile-tag">👤 Patient</span>' : '<span class="profile-tag">👨‍⚕️ Médecin</span>'
+    ].filter(Boolean).join('');
+
+    document.getElementById('personalInfo').innerHTML = [
+      { label: 'Prénom', value: p.firstName },
+      { label: 'Nom', value: p.lastName },
+      { label: 'Date de naissance', value: p.dateOfBirth ? formatDate(p.dateOfBirth) : '-' },
+      { label: 'Téléphone', value: p.phone || '-' },
+      { label: 'Adresse', value: p.address || '-' },
+      { label: 'Email', value: user.email }
+    ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+
+    document.getElementById('medicalInfo').innerHTML = [
+      { label: 'Diagnostic', value: p.diagnosis || '-' },
+      { label: 'Médecin traitant', value: p.treatingDoctor || '-' },
+      { label: 'Établissement', value: p.hospitalStay || '-' },
+      { label: 'Date de sortie', value: p.hospitalDischargeDate ? formatDate(p.hospitalDischargeDate) : '-' }
+    ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+
+    // Load stats
+    try {
+      const [appointments, medications, symptoms] = await Promise.all([
+        apiFetch('/appointments'),
+        apiFetch('/medications'),
+        apiFetch('/symptoms')
+      ]);
+
+      const days = getDaysSinceDischarge(p.hospitalDischargeDate);
+
+      document.getElementById('summaryInfo').innerHTML = [
+        { label: 'Jours de convalescence', value: days + ' jours' },
+        { label: 'Médicaments en cours', value: medications.length },
+        { label: 'Relevés de symptômes', value: symptoms.length },
+        { label: 'Rendez-vous totaux', value: appointments.length }
+      ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function shareWithDoctor() {
+    showToast('Dossier partagé avec Dr. Sophie Martin ✅', 'success');
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>

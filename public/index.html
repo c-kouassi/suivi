@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Connexion</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="auth-page">
+
+  <!-- Côté gauche - Présentation -->
+  <div class="auth-left">
+    <div class="auth-logo">🏥</div>
+    <h1>SuiviPatient</h1>
+    <p>Assistant IA de suivi post-hospitalisation pour un rétablissement serein et accompagné</p>
+
+    <div class="auth-features">
+      <div class="auth-feature">
+        <span class="auth-feature-icon">🤖</span>
+        <p>Assistant IA disponible 24h/24 pour répondre à vos questions</p>
+      </div>
+      <div class="auth-feature">
+        <span class="auth-feature-icon">💊</span>
+        <p>Gestion et rappels de vos médicaments</p>
+      </div>
+      <div class="auth-feature">
+        <span class="auth-feature-icon">📊</span>
+        <p>Suivi de vos constantes et symptômes au quotidien</p>
+      </div>
+      <div class="auth-feature">
+        <span class="auth-feature-icon">📅</span>
+        <p>Gestion de vos rendez-vous médicaux</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Côté droit - Formulaire -->
+  <div class="auth-right">
+    <div class="auth-form-container">
+
+      <!-- Login Form -->
+      <div id="loginView">
+        <h2>Bon retour 👋</h2>
+        <p class="auth-subtitle">Connectez-vous pour accéder à votre espace de suivi</p>
+
+        <div id="loginAlert" class="alert alert-danger hidden"></div>
+
+        <form id="loginForm">
+          <div class="form-group">
+            <label>Adresse email</label>
+            <input type="email" class="form-control" id="loginEmail" placeholder="votre@email.com" required>
+          </div>
+          <div class="form-group">
+            <label>Mot de passe</label>
+            <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="loginBtn">
+            Se connecter
+          </button>
+        </form>
+
+        <p style="text-align:center; margin-top:20px; color: var(--text-secondary); font-size:0.875rem;">
+          Pas encore de compte ?
+          <a href="#" id="showRegister" style="color: var(--primary); font-weight:600;">Créer un compte</a>
+        </p>
+
+        <div style="margin-top:24px; padding:16px; background:var(--surface-2); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--text-secondary);">
+          <strong>Demo :</strong><br>
+          👤 jean.dupont@email.com / password<br>
+          👨‍⚕️ sophie.martin@hopital.fr / password
+        </div>
+      </div>
+
+      <!-- Register Form -->
+      <div id="registerView" class="hidden">
+        <h2>Créer un compte</h2>
+        <p class="auth-subtitle">Rejoignez SuiviPatient pour un suivi personnalisé</p>
+
+        <div id="registerAlert" class="alert alert-danger hidden"></div>
+
+        <form id="registerForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom *</label>
+              <input type="text" class="form-control" id="regFirstName" placeholder="Jean" required>
+            </div>
+            <div class="form-group">
+              <label>Nom *</label>
+              <input type="text" class="form-control" id="regLastName" placeholder="Dupont" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" class="form-control" id="regEmail" placeholder="votre@email.com" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Date de naissance</label>
+              <input type="date" class="form-control" id="regDob">
+            </div>
+            <div class="form-group">
+              <label>Téléphone</label>
+              <input type="tel" class="form-control" id="regPhone" placeholder="06 12 34 56 78">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Mot de passe *</label>
+            <input type="password" class="form-control" id="regPassword" placeholder="Minimum 6 caractères" required minlength="6">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg">
+            Créer mon compte
+          </button>
+        </form>
+
+        <p style="text-align:center; margin-top:20px; color: var(--text-secondary); font-size:0.875rem;">
+          Déjà un compte ?
+          <a href="#" id="showLogin" style="color: var(--primary); font-weight:600;">Se connecter</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (getToken()) window.location.href = '/dashboard';
+
+    // Toggle views
+    document.getElementById('showRegister').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('registerView').classList.remove('hidden');
+    });
+
+    document.getElementById('showLogin').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('registerView').classList.add('hidden');
+      document.getElementById('loginView').classList.remove('hidden');
+    });
+
+    // Login form
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const alert = document.getElementById('loginAlert');
+      alert.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Connexion...';
+
+      try {
+        const data = await apiFetch('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: document.getElementById('loginEmail').value,
+            password: document.getElementById('loginPassword').value
+          })
+        });
+
+        setAuth(data.token, data.user);
+        window.location.href = '/dashboard';
+      } catch (err) {
+        alert.textContent = '⚠️ ' + err.message;
+        alert.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Se connecter';
+      }
+    });
+
+    // Register form
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const alert = document.getElementById('registerAlert');
+      alert.classList.add('hidden');
+
+      try {
+        const data = await apiFetch('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            firstName: document.getElementById('regFirstName').value,
+            lastName: document.getElementById('regLastName').value,
+            email: document.getElementById('regEmail').value,
+            password: document.getElementById('regPassword').value,
+            dateOfBirth: document.getElementById('regDob').value,
+            phone: document.getElementById('regPhone').value
+          })
+        });
+
+        setAuth(data.token, data.user);
+        window.location.href = '/dashboard';
+      } catch (err) {
+        alert.textContent = '⚠️ ' + err.message;
+        alert.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

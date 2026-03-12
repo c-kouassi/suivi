@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Assistant IA</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .chat-container { display: flex; flex-direction: column; height: calc(100vh - var(--topbar-height)); }
+    .chat-header-info {
+      padding: 16px 24px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .ai-avatar {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      border: 2px solid rgba(255,255,255,0.4);
+      flex-shrink: 0;
+    }
+    .ai-info h3 { font-size: 1rem; font-weight: 700; }
+    .ai-info p { font-size: 0.78rem; opacity: 0.9; }
+    .ai-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .ai-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .typing-indicator { display: flex; gap: 4px; align-items: center; padding: 14px 16px; }
+    .typing-dot { width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%; animation: bounce 0.8s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Principal</span>
+      <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+      <div class="nav-link active" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Santé</span>
+      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+      <span class="nav-section-label">Dossier médical</span>
+      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>🤖 Assistant IA</h1>
+        <p>Votre accompagnateur post-hospitalisation</p>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" title="Effacer l'historique">🗑️ Effacer</button>
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="chat-container">
+
+      <!-- Chat Header Info -->
+      <div class="chat-header-info">
+        <div class="ai-avatar">🤖</div>
+        <div class="ai-info">
+          <h3>Assistant médical IA</h3>
+          <div class="ai-status">
+            <span class="ai-dot"></span>
+            <span style="font-size:0.78rem;">En ligne · Disponible 24h/24</span>
+          </div>
+        </div>
+        <div style="margin-left:auto; text-align:right; font-size:0.75rem; opacity:0.85; max-width:200px;">
+          ⚠️ Pour toute urgence médicale, appelez le <strong>15</strong>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages">
+        <!-- Messages loaded dynamically -->
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <div class="chat-suggestions" id="suggestions">
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Mes médicaments</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Gestion de la douleur</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Alimentation recommandée</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Reprise du sport</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Soins de cicatrice</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">J'ai de l'anxiété</span>
+        </div>
+        <div class="chat-input-wrapper">
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            placeholder="Posez votre question à l'assistant IA..."
+            rows="1"
+            maxlength="1000"
+          ></textarea>
+          <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+  initSidebar();
+
+  const chatMessages = document.getElementById('chatMessages');
+  const chatInput = document.getElementById('chatInput');
+  let isTyping = false;
+
+  // Auto-resize textarea
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto';
+    chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+  });
+
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function scrollToBottom() {
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function formatMessageTime(timestamp) {
+    const d = new Date(timestamp);
+    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderMessage(msg) {
+    const isUser = msg.role === 'user';
+    const content = isUser ? msg.content : renderMarkdown(msg.content);
+    const div = document.createElement('div');
+    div.className = `message ${isUser ? 'user' : 'ai'}`;
+    div.innerHTML = `
+      <div class="message-avatar ${isUser ? 'user' : 'ai'}">${isUser ? '👤' : '🤖'}</div>
+      <div>
+        <div class="message-bubble${isUser ? '' : ' md-content'}">${content}</div>
+        <div class="message-time">${formatMessageTime(msg.timestamp)}</div>
+      </div>
+    `;
+    return div;
+  }
+
+  function showTypingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'message ai';
+    div.id = 'typingIndicator';
+    div.innerHTML = `
+      <div class="message-avatar ai">🤖</div>
+      <div>
+        <div class="message-bubble" style="padding:10px 16px">
+          <div class="typing-indicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    chatMessages.appendChild(div);
+    scrollToBottom();
+  }
+
+  function removeTypingIndicator() {
+    const indicator = document.getElementById('typingIndicator');
+    if (indicator) indicator.remove();
+  }
+
+  async function loadMessages() {
+    try {
+      const messages = await apiFetch('/chat/messages');
+      chatMessages.innerHTML = '';
+
+      if (messages.length === 0) {
+        const user = getUser();
+        const welcomeMsg = {
+          id: 'welcome',
+          role: 'assistant',
+          content: `Bonjour ${user.profile.firstName} ! Je suis votre **assistant IA post-hospitalisation**. 😊\n\nJe suis là pour vous accompagner dans votre rétablissement. Je peux répondre à vos questions sur :\n- 💊 Vos médicaments\n- 🍽️ L'alimentation\n- 🏃 La reprise des activités\n- 🩹 Les soins de cicatrice\n- ❤️ Le suivi cardiaque\n\nComment puis-je vous aider aujourd'hui ?`,
+          timestamp: new Date().toISOString()
+        };
+        chatMessages.appendChild(renderMessage(welcomeMsg));
+      } else {
+        messages.forEach(msg => chatMessages.appendChild(renderMessage(msg)));
+      }
+
+      scrollToBottom();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function sendMessage() {
+    const content = chatInput.value.trim();
+    if (!content || isTyping) return;
+
+    isTyping = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('suggestions').style.display = 'none';
+
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+
+    // Display user message immediately
+    const userMsg = { role: 'user', content, timestamp: new Date().toISOString() };
+    chatMessages.appendChild(renderMessage(userMsg));
+    scrollToBottom();
+
+    // Show typing indicator
+    setTimeout(() => { showTypingIndicator(); scrollToBottom(); }, 200);
+
+    try {
+      const data = await apiFetch('/chat/send', {
+        method: 'POST',
+        body: JSON.stringify({ content })
+      });
+
+      removeTypingIndicator();
+      chatMessages.appendChild(renderMessage(data.aiResponse));
+      scrollToBottom();
+    } catch (err) {
+      removeTypingIndicator();
+      const errorMsg = { role: 'assistant', content: 'Désolé, une erreur est survenue. Veuillez réessayer.', timestamp: new Date().toISOString() };
+      chatMessages.appendChild(renderMessage(errorMsg));
+    } finally {
+      isTyping = false;
+      document.getElementById('sendBtn').disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  function sendSuggestion(el) {
+    chatInput.value = el.textContent;
+    sendMessage();
+  }
+
+  async function clearChatHistory() {
+    if (!confirm('Effacer tout l\'historique de conversation ?')) return;
+    try {
+      await apiFetch('/chat/clear', { method: 'DELETE' });
+      await loadMessages();
+      showToast('Historique effacé', 'success');
+    } catch (err) {
+      showToast('Erreur lors de la suppression', 'error');
+    }
+  }
+
+  loadMessages();
+</script>
+</body>
+</html>
