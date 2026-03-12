@@ -1,6 +1,6 @@
 const express = require('express');
-const { getDB, saveDB } = require('../utils/db');
-const { authenticateToken } = require('../middleware/auth');
+const authenticateToken = require('../middleware/auth');
+const ChatMessage = require('../models/ChatMessage');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
@@ -221,56 +221,65 @@ Je peux vous aider sur des sujets comme :
 Reformulez votre question et je ferai de mon mieux pour vous aider ! 😊`;
 }
 
-// GET /api/chat/messages
-router.get('/messages', authenticateToken, (req, res) => {
-  const db = getDB();
-  const messages = db.chatMessages
-    .filter(m => m.patientId === req.user.id)
-    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  res.json(messages);
+// GET /api/chat
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const messages = await ChatMessage.findAll({
+      where: { patientId: req.user.id },
+      order: [['createdAt', 'ASC']]
+    });
+    res.json(messages);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // POST /api/chat/send
-router.post('/send', authenticateToken, (req, res) => {
-  const { content } = req.body;
+router.post('/send', authenticateToken, async (req, res) => {
+  try {
+    const { content } = req.body;
 
-  if (!content || content.trim() === '') {
-    return res.status(400).json({ error: 'Le message ne peut pas être vide' });
+    if (!content || content.trim() === '') {
+      return res.status(400).json({ error: 'Le message ne peut pas être vide' });
+    }
+
+    // Message utilisateur
+    const userMessage = await ChatMessage.create({
+      id: `msg-${uuidv4()}`,
+      patientId: req.user.id,
+      type: 'user',
+      message: content.trim(),
+      timestamp: new Date()
+    });
+
+    // Réponse IA
+    const aiResponse = await ChatMessage.create({
+      id: `msg-${uuidv4()}`,
+      patientId: req.user.id,
+      type: 'ai',
+      message: generateAIResponse(content),
+      timestamp: new Date()
+    });
+
+    res.json({ userMessage, aiResponse });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
-
-  const db = getDB();
-  const now = new Date().toISOString();
-
-  // Message utilisateur
-  const userMessage = {
-    id: `msg-${uuidv4()}`,
-    patientId: req.user.id,
-    role: 'user',
-    content: content.trim(),
-    timestamp: now
-  };
-
-  // Réponse IA
-  const aiResponse = {
-    id: `msg-${uuidv4()}`,
-    patientId: req.user.id,
-    role: 'assistant',
-    content: generateAIResponse(content),
-    timestamp: new Date(Date.now() + 500).toISOString()
-  };
-
-  db.chatMessages.push(userMessage, aiResponse);
-  saveDB(db);
-
-  res.json({ userMessage, aiResponse });
 });
 
 // DELETE /api/chat/clear
-router.delete('/clear', authenticateToken, (req, res) => {
-  const db = getDB();
-  db.chatMessages = db.chatMessages.filter(m => m.patientId !== req.user.id);
-  saveDB(db);
-  res.json({ message: 'Historique effacé' });
+router.delete('/clear', authenticateToken, async (req, res) => {
+  try {
+    await ChatMessage.destroy({
+      where: { patientId: req.user.id }
+    });
+    res.json({ message: 'Historique effacé' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;

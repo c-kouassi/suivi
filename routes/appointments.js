@@ -1,67 +1,94 @@
 const express = require('express');
-const { getDB, saveDB } = require('../utils/db');
-const { authenticateToken } = require('../middleware/auth');
+const authenticateToken = require('../middleware/auth');
+const Appointment = require('../models/Appointment');
 const { v4: uuidv4 } = require('uuid');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
 // GET /api/appointments
-router.get('/', authenticateToken, (req, res) => {
-  const db = getDB();
-  const appointments = db.appointments
-    .filter(a => a.patientId === req.user.id)
-    .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
-  res.json(appointments);
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const appointments = await Appointment.findAll({
+      where: { patientId: req.user.id },
+      order: [['date', 'ASC'], ['time', 'ASC']]
+    });
+    res.json(appointments);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // POST /api/appointments
-router.post('/', authenticateToken, (req, res) => {
-  const { doctorName, specialty, date, time, location, type, notes } = req.body;
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { title, description, date, time, location, type, status } = req.body;
 
-  if (!doctorName || !date || !time) {
-    return res.status(400).json({ error: 'Médecin, date et heure sont requis' });
+    // Accepter aussi les anciens noms de champs pour compatibilité
+    const appointmentTitle = title || req.body.doctorName || 'Rendez-vous';
+    const appointmentDescription = description || req.body.notes || '';
+
+    if (!date || !time) {
+      return res.status(400).json({ error: 'Date et heure sont requis' });
+    }
+
+    const newAppointment = await Appointment.create({
+      id: `apt-${uuidv4()}`,
+      patientId: req.user.id,
+      doctorId: null,
+      title: appointmentTitle,
+      description: appointmentDescription,
+      date,
+      time,
+      location: location || '',
+      type: type || 'consultation',
+      status: status || 'pending'
+    });
+
+    res.status(201).json(newAppointment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
   }
-
-  const db = getDB();
-  const newAppointment = {
-    id: `apt-${uuidv4()}`,
-    patientId: req.user.id,
-    doctorId: null,
-    doctorName,
-    specialty: specialty || '',
-    date,
-    time,
-    location: location || '',
-    type: type || 'Consultation',
-    status: 'pending',
-    notes: notes || ''
-  };
-
-  db.appointments.push(newAppointment);
-  saveDB(db);
-  res.status(201).json(newAppointment);
 });
 
 // PUT /api/appointments/:id
-router.put('/:id', authenticateToken, (req, res) => {
-  const db = getDB();
-  const idx = db.appointments.findIndex(a => a.id === req.params.id && a.patientId === req.user.id);
-  if (idx === -1) return res.status(404).json({ error: 'Rendez-vous introuvable' });
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({
+      where: { id: req.params.id, patientId: req.user.id }
+    });
 
-  db.appointments[idx] = { ...db.appointments[idx], ...req.body };
-  saveDB(db);
-  res.json(db.appointments[idx]);
+    if (!appointment) {
+      return res.status(404).json({ error: 'Rendez-vous introuvable' });
+    }
+
+    await appointment.update(req.body);
+    res.json(appointment);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // DELETE /api/appointments/:id
-router.delete('/:id', authenticateToken, (req, res) => {
-  const db = getDB();
-  const idx = db.appointments.findIndex(a => a.id === req.params.id && a.patientId === req.user.id);
-  if (idx === -1) return res.status(404).json({ error: 'Rendez-vous introuvable' });
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const appointment = await Appointment.findOne({
+      where: { id: req.params.id, patientId: req.user.id }
+    });
 
-  db.appointments.splice(idx, 1);
-  saveDB(db);
-  res.json({ message: 'Rendez-vous supprimé' });
+    if (!appointment) {
+      return res.status(404).json({ error: 'Rendez-vous introuvable' });
+    }
+
+    await appointment.destroy();
+    res.json({ message: 'Rendez-vous supprimé' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;

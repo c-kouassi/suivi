@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const initializeDatabase = require('./config/init');
 
 const authRoutes = require('./routes/auth');
 const appointmentRoutes = require('./routes/appointments');
@@ -35,10 +36,16 @@ app.get('/appointments', (req, res) => res.sendFile(path.join(__dirname, 'public
 app.get('/documents', (req, res) => res.sendFile(path.join(__dirname, 'public', 'documents.html')));
 app.get('/profile', (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
 
-app.listen(PORT, () => {
-  console.log(`\n🏥 SuiviPatient - Application démarrée`);
-  console.log(`📡 Serveur en écoute sur http://localhost:${PORT}`);
-  console.log(`\n📋 Identifiants de test :`);
-  console.log(`   Patient : jean.dupont@email.com / password`);
-  console.log(`   Médecin : sophie.martin@hopital.fr / password\n`);
+// Initialiser la base de données puis démarrer le serveur
+initializeDatabase().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🏥 SuiviPatient - Application démarrée`);
+    console.log(`📡 Serveur en écoute sur http://localhost:${PORT}`);
+    console.log(`\n📋 Identifiants de test :`);
+    console.log(`   Patient : jean.dupont@email.com / password`);
+    console.log(`   Médecin : sophie.martin@hopital.fr / password\n`);
+  });
+}).catch(err => {
+  console.error('Impossible de démarrer le serveur:', err.message);
+  process.exit(1);
 });

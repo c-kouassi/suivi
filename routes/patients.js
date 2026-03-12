@@ -1,23 +1,36 @@
 const express = require('express');
-const { getDB } = require('../utils/db');
-const { authenticateToken } = require('../middleware/auth');
+const authenticateToken = require('../middleware/auth');
+const Document = require('../models/Document');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 
 // GET /api/documents
-router.get('/', authenticateToken, (req, res) => {
-  const db = getDB();
-  const docs = db.documents.filter(d => d.patientId === req.user.id);
-  res.json(docs);
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const docs = await Document.findAll({
+      where: { patientId: req.user.id },
+      order: [['uploadDate', 'DESC']]
+    });
+    res.json(docs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
-// GET /api/notifications
-router.get('/notifications', authenticateToken, (req, res) => {
-  const db = getDB();
-  const notifs = db.notifications
-    .filter(n => n.patientId === req.user.id)
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  res.json(notifs);
+// GET /api/patients/notifications
+router.get('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const notifs = await Notification.findAll({
+      where: { patientId: req.user.id },
+      order: [['timestamp', 'DESC']]
+    });
+    res.json(notifs);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 module.exports = router;
