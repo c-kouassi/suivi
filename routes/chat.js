@@ -4,6 +4,8 @@ const ChatMessage = require('../models/ChatMessage');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 // Base de connaissances IA post-hospitalisation
 const AI_KNOWLEDGE_BASE = [
@@ -295,6 +297,80 @@ Je peux vous aider sur des sujets comme :
 Reformulez votre question et je ferai de mon mieux pour vous aider ! 😊`;
 }
 
+function buildSystemPrompt(userRole) {
+  if (userRole === 'doctor') {
+    return `Tu es un assistant clinique pour médecins dans une application de suivi patient post-hospitalisation.
+Réponds en français, de manière concise, structurée et actionnable.
+Tu ne poses pas de diagnostic définitif.
+Si une urgence est suspectée, rappelle d'appeler le 15.
+Propose des étapes concrètes (suivi, communication patient, rendez-vous, coordination).`;
+  }
+
+  return `Tu es un assistant de suivi post-hospitalisation pour patient.
+Réponds en français, de manière claire, rassurante et pratique.
+Tu ne remplaces pas un médecin et tu ne poses pas de diagnostic définitif.
+Si des signes d'urgence sont décrits, demande d'appeler immédiatement le 15.
+Donne des conseils simples et des prochaines étapes concrètes.`;
+}
+
+function mapHistoryToLLMMessages(history) {
+  return history
+    .slice()
+    .reverse()
+    .map((item) => ({
+      role: item.type === 'user' ? 'user' : 'assistant',
+      content: item.message || ''
+    }))
+    .filter((m) => m.content.trim().length > 0);
+}
+
+async function generateGroqResponse({ userRole, history }) {
+  if (!process.env.GROQ_API_KEY) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.35,
+        max_tokens: 700,
+        messages: [
+          {
+            role: 'system',
+            content: buildSystemPrompt(userRole)
+          },
+          ...mapHistoryToLLMMessages(history)
+        ]
+      }),
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Groq API error:', response.status, errText.slice(0, 300));
+      return null;
+    }
+
+    const data = await response.json();
+    const answer = data?.choices?.[0]?.message?.content;
+    return answer && answer.trim() ? answer.trim() : null;
+  } catch (err) {
+    console.error('Groq request failed:', err.message);
+    return null;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 // GET /api/chat
 router.get('/', authenticateToken, async (req, res) => {
   try {
@@ -327,12 +403,24 @@ router.post('/send', authenticateToken, async (req, res) => {
       timestamp: new Date()
     });
 
+    // Historique récent pour contextualiser la réponse LLM
+    const history = await ChatMessage.findAll({
+      where: { patientId: req.user.id },
+      order: [['createdAt', 'DESC']],
+      limit: 12
+    });
+
+    const llmText = await generateGroqResponse({
+      userRole: req.user.role,
+      history
+    });
+
     // Réponse IA
     const aiResponse = await ChatMessage.create({
       id: `msg-${uuidv4()}`,
       patientId: req.user.id,
       type: 'ai',
-      message: generateAIResponse(content, req.user.role),
+      message: llmText || generateAIResponse(content, req.user.role),
       timestamp: new Date()
     });
 
