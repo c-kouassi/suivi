@@ -44,6 +44,9 @@
       <div id="loginView">
         <h2>Bon retour 👋</h2>
         <p class="auth-subtitle">Connectez-vous pour accéder à votre espace de suivi</p>
+        <p class="text-sm" style="margin-bottom:18px;">
+          <a href="/">← Retour à l'accueil</a>
+        </p>
 
         <div id="loginAlert" class="alert alert-danger hidden"></div>
 
@@ -66,21 +69,39 @@
           <a href="#" id="showRegister" style="color: var(--primary); font-weight:600;">Créer un compte</a>
         </p>
 
-        <div style="margin-top:24px; padding:16px; background:var(--surface-2); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--text-secondary);">
+        <!-- <div style="margin-top:24px; padding:16px; background:var(--surface-2); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--text-secondary);">
           <strong>Demo :</strong><br>
           👤 jean.dupont@email.com / password<br>
           👨‍⚕️ sophie.martin@hopital.fr / password
-        </div>
+        </div> -->
+
       </div>
 
       <!-- Register Form -->
       <div id="registerView" class="hidden">
         <h2>Créer un compte</h2>
         <p class="auth-subtitle">Rejoignez SuiviPatient pour un suivi personnalisé</p>
+        <p class="text-sm" style="margin-bottom:18px;">
+          <a href="/">← Retour à l'accueil</a>
+        </p>
 
         <div id="registerAlert" class="alert alert-danger hidden"></div>
 
         <form id="registerForm">
+          <div class="form-group">
+            <label>Type de compte *</label>
+            <div class="form-row" style="grid-template-columns: 1fr 1fr;">
+              <label style="display:flex; align-items:center; gap:8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; cursor:pointer;">
+                <input type="radio" name="regRole" value="patient" checked>
+                <span>Patient</span>
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; cursor:pointer;">
+                <input type="radio" name="regRole" value="doctor">
+                <span>Médecin</span>
+              </label>
+            </div>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label>Prénom *</label>
@@ -109,6 +130,19 @@
             <label>Mot de passe *</label>
             <input type="password" class="form-control" id="regPassword" placeholder="Minimum 6 caractères" required minlength="6">
           </div>
+
+          <div class="form-group hidden" id="doctorSpecialityGroup">
+            <label>Spécialité</label>
+            <input type="text" class="form-control" id="regSpeciality" placeholder="Cardiologie">
+          </div>
+
+          <div class="form-group" id="patientDoctorGroup">
+            <label>Médecin référent (optionnel)</label>
+            <select class="form-control" id="regTreatingDoctorId">
+              <option value="">Aucun pour le moment</option>
+            </select>
+          </div>
+
           <button type="submit" class="btn btn-primary btn-full btn-lg">
             Créer mon compte
           </button>
@@ -140,6 +174,65 @@
       document.getElementById('registerView').classList.add('hidden');
       document.getElementById('loginView').classList.remove('hidden');
     });
+
+    function getSelectedRegisterRole() {
+      const selected = document.querySelector('input[name="regRole"]:checked');
+      return selected ? selected.value : 'patient';
+    }
+
+    async function loadDoctorsForSelect() {
+      const select = document.getElementById('regTreatingDoctorId');
+      try {
+        const res = await fetch('/api/doctors/available');
+        const doctors = await res.json();
+
+        if (!res.ok) {
+          return;
+        }
+
+        select.innerHTML = '<option value="">Aucun pour le moment</option>';
+        doctors.forEach((doctor) => {
+          const firstName = doctor.profile && doctor.profile.firstName ? doctor.profile.firstName : '';
+          const lastName = doctor.profile && doctor.profile.lastName ? doctor.profile.lastName : '';
+          const speciality = doctor.profile && doctor.profile.speciality ? ` (${doctor.profile.speciality})` : '';
+          const option = document.createElement('option');
+          option.value = doctor.id;
+          option.textContent = `Dr. ${firstName} ${lastName}`.trim() + speciality;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        // Pas bloquant: l'utilisateur peut continuer son inscription.
+      }
+    }
+
+    function refreshRegisterRoleUI() {
+      const role = getSelectedRegisterRole();
+      const doctorSpecialityGroup = document.getElementById('doctorSpecialityGroup');
+      const patientDoctorGroup = document.getElementById('patientDoctorGroup');
+      const dob = document.getElementById('regDob');
+
+      if (role === 'doctor') {
+        doctorSpecialityGroup.classList.remove('hidden');
+        patientDoctorGroup.classList.add('hidden');
+        dob.disabled = true;
+      } else {
+        doctorSpecialityGroup.classList.add('hidden');
+        patientDoctorGroup.classList.remove('hidden');
+        dob.disabled = false;
+      }
+    }
+
+    document.querySelectorAll('input[name="regRole"]').forEach((input) => {
+      input.addEventListener('change', refreshRegisterRoleUI);
+    });
+
+    if (window.location.hash === '#register') {
+      document.getElementById('loginView').classList.add('hidden');
+      document.getElementById('registerView').classList.remove('hidden');
+    }
+
+    loadDoctorsForSelect();
+    refreshRegisterRoleUI();
 
     // Login form
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -176,6 +269,7 @@
       alert.classList.add('hidden');
 
       try {
+        const role = getSelectedRegisterRole();
         const data = await apiFetch('/auth/register', {
           method: 'POST',
           body: JSON.stringify({
@@ -183,8 +277,11 @@
             lastName: document.getElementById('regLastName').value,
             email: document.getElementById('regEmail').value,
             password: document.getElementById('regPassword').value,
-            dateOfBirth: document.getElementById('regDob').value,
-            phone: document.getElementById('regPhone').value
+            dateOfBirth: role === 'patient' ? document.getElementById('regDob').value : null,
+            phone: document.getElementById('regPhone').value,
+            role,
+            speciality: role === 'doctor' ? document.getElementById('regSpeciality').value : null,
+            treatingDoctorId: role === 'patient' ? document.getElementById('regTreatingDoctorId').value : null
           })
         });
 

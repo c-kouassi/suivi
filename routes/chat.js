@@ -196,8 +196,82 @@ Comment puis-je vous aider aujourd'hui ?`
   }
 ];
 
-function generateAIResponse(userMessage) {
+// Base de connaissances IA pour médecin
+const AI_DOCTOR_KNOWLEDGE_BASE = [
+  {
+    keywords: ['patient', 'dossier', 'suivi', 'panel'],
+    response: `**Suivi de vos patients** 🧑‍⚕️
+
+Depuis votre dashboard médecin, vous pouvez :
+
+- Consulter l'onglet **Mes patients**
+- Ouvrir un dossier patient pour voir constantes, traitements et documents
+- Envoyer des notifications ciblées
+- Créer un rendez-vous pour un patient
+
+💡 Commencez par sélectionner un patient pour afficher sa vue médicale détaillée.`
+  },
+  {
+    keywords: ['notification', 'message', 'alerte'],
+    response: `**Communication médecin-patient** 🔔
+
+Vous pouvez interagir directement avec le patient depuis le dashboard :
+
+- **Envoyer notification** pour rappel, consigne ou alerte
+- Type recommandé : 
+  - \'message\' pour information générale
+  - \'alert\' pour information prioritaire
+
+✍️ Rédigez des consignes courtes, claires et actionnables.`
+  },
+  {
+    keywords: ['rendez-vous', 'appointment', 'consultation'],
+    response: `**Planification des rendez-vous** 📅
+
+Pour planifier un patient :
+
+1. Ouvrez son dossier
+2. Cliquez sur **Ajouter rendez-vous**
+3. Renseignez titre, date, heure et lieu
+
+Le rendez-vous sera visible dans son espace patient.`
+  },
+  {
+    keywords: ['bonjour', 'salut', 'hello', 'bonsoir'],
+    response: `Bonjour Docteur. 👋
+
+Je suis votre assistant IA clinique dans SuiviPatient.
+
+Je peux vous aider à :
+- structurer le suivi patient,
+- rédiger des notifications,
+- préparer des rappels de consultation,
+- standardiser vos messages d'éducation thérapeutique.
+
+Que souhaitez-vous faire ?`
+  }
+];
+
+function generateAIResponse(userMessage, userRole) {
   const message = userMessage.toLowerCase();
+
+  if (userRole === 'doctor') {
+    for (const entry of AI_DOCTOR_KNOWLEDGE_BASE) {
+      if (entry.keywords.some(keyword => message.includes(keyword))) {
+        return entry.response;
+      }
+    }
+
+    return `Message reçu Docteur. ✅
+
+Je peux vous assister sur :
+- le suivi des dossiers patients,
+- la préparation de notifications claires,
+- l'organisation des consultations,
+- les messages d'éducation post-hospitalisation.
+
+Exemple : "Rédige une notification courte pour rappeler le bilan sanguin de demain."`;
+  }
 
   for (const entry of AI_KNOWLEDGE_BASE) {
     if (entry.keywords.some(keyword => message.includes(keyword))) {
@@ -258,7 +332,7 @@ router.post('/send', authenticateToken, async (req, res) => {
       id: `msg-${uuidv4()}`,
       patientId: req.user.id,
       type: 'ai',
-      message: generateAIResponse(content),
+      message: generateAIResponse(content, req.user.role),
       timestamp: new Date()
     });
 

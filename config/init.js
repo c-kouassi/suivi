@@ -29,12 +29,16 @@ async function initializeDatabase() {
     User.hasMany(Notification, { foreignKey: 'patientId' });
     Notification.belongsTo(User, { foreignKey: 'patientId' });
 
+    // Un médecin peut suivre plusieurs patients.
+    User.hasMany(User, { foreignKey: 'treatingDoctorId', as: 'patients' });
+    User.belongsTo(User, { foreignKey: 'treatingDoctorId', as: 'treatingDoctor' });
+
     // Tester la connexion
     await sequelize.authenticate();
     console.log('✅ Connexion MySQL établie');
 
     // Synchroniser la BD
-    await sequelize.sync({ alter: false });
+    await sequelize.sync({ alter: true });
     console.log('📊 Schéma de base de données synchronisé');
 
   } catch (err) {

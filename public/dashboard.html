@@ -6,6 +6,112 @@
   <title>SuiviPatient - Tableau de bord</title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .ai-fab {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      z-index: 1200;
+    }
+
+    .ai-dialog {
+      position: fixed;
+      right: 24px;
+      bottom: 92px;
+      width: min(420px, calc(100vw - 24px));
+      max-height: 72vh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1201;
+    }
+
+    .ai-dialog.open { display: flex; }
+
+    .ai-dialog-header {
+      padding: 12px 14px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .ai-dialog-body {
+      padding: 12px;
+      overflow-y: auto;
+      min-height: 220px;
+      max-height: 48vh;
+      background: var(--surface-2);
+    }
+
+    .ai-mini-msg {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .ai-mini-msg.user { flex-direction: row-reverse; }
+
+    .ai-mini-bubble {
+      background: white;
+      border: 1px solid var(--border-light);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.83rem;
+      max-width: 84%;
+      line-height: 1.45;
+    }
+
+    .ai-mini-msg.user .ai-mini-bubble {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .ai-dialog-input {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding: 10px;
+      background: white;
+    }
+
+    .ai-dialog-input input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .ai-dialog-input button {
+      border: none;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
 <div class="app-layout">
@@ -218,14 +324,426 @@
   </div>
 </div>
 
+<button class="ai-fab" id="aiFab" title="Assistant IA">🤖</button>
+<div class="ai-dialog" id="aiDialog">
+  <div class="ai-dialog-header">
+    <span id="aiDialogTitle">Assistant IA</span>
+    <button class="btn btn-ghost btn-sm" id="aiDialogClose" style="color:white;">✕</button>
+  </div>
+  <div class="ai-dialog-body" id="aiDialogBody"></div>
+  <div class="ai-dialog-input">
+    <input type="text" id="aiDialogInput" placeholder="Posez votre question..." maxlength="700">
+    <button id="aiDialogSend">Envoyer</button>
+  </div>
+</div>
+
 <script src="/js/app.js"></script>
 <script>
   requireAuth();
   initSidebar();
 
   const user = getUser();
+  let doctorPatients = [];
+  let availablePatients = [];
+  let selectedPatientId = null;
+  let aiDialogBusy = false;
 
-  async function loadDashboard() {
+  function escapeHTML(value) {
+    return (value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function addAiDialogMessage(role, text) {
+    const body = document.getElementById('aiDialogBody');
+    const div = document.createElement('div');
+    div.className = `ai-mini-msg ${role === 'user' ? 'user' : 'ai'}`;
+    div.innerHTML = `<div class="ai-mini-bubble ${role === 'ai' ? 'md-content' : ''}">${role === 'ai' ? renderMarkdown(text) : escapeHTML(text)}</div>`;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function initAiDialog() {
+    const fab = document.getElementById('aiFab');
+    const dialog = document.getElementById('aiDialog');
+    const closeBtn = document.getElementById('aiDialogClose');
+    const sendBtn = document.getElementById('aiDialogSend');
+    const input = document.getElementById('aiDialogInput');
+    const title = document.getElementById('aiDialogTitle');
+
+    title.textContent = user.role === 'doctor' ? 'Assistant IA médecin' : 'Assistant IA patient';
+
+    fab.addEventListener('click', () => {
+      dialog.classList.toggle('open');
+      if (dialog.classList.contains('open')) {
+        input.focus();
+        if (!document.getElementById('aiDialogBody').children.length) {
+          addAiDialogMessage('ai', user.role === 'doctor'
+            ? 'Bonjour Docteur. Je peux vous aider à gérer vos patients, notifications et consultations.'
+            : 'Bonjour. Je peux vous aider pour votre suivi, vos médicaments et vos symptômes.');
+        }
+      }
+    });
+
+    closeBtn.addEventListener('click', () => dialog.classList.remove('open'));
+    sendBtn.addEventListener('click', sendAiDialogMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendAiDialogMessage();
+      }
+    });
+  }
+
+  async function sendAiDialogMessage() {
+    if (aiDialogBusy) return;
+    const input = document.getElementById('aiDialogInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    aiDialogBusy = true;
+    input.value = '';
+    addAiDialogMessage('user', text);
+
+    try {
+      const data = await apiFetch('/chat/send', {
+        method: 'POST',
+        body: JSON.stringify({ content: text })
+      });
+      addAiDialogMessage('ai', data.aiResponse.message || data.aiResponse.content || 'Réponse indisponible');
+    } catch (err) {
+      addAiDialogMessage('ai', 'Erreur lors de la réponse IA. Veuillez réessayer.');
+    } finally {
+      aiDialogBusy = false;
+    }
+  }
+
+  function getSymptomVitals(symptom) {
+    if (!symptom) return {};
+    if (symptom.vitals && typeof symptom.vitals === 'object') return symptom.vitals;
+    return {
+      heartRate: symptom.heartRate,
+      bloodPressure: symptom.bloodPressure,
+      temperature: symptom.temperature,
+      oxygenSaturation: symptom.oxygenSaturation
+    };
+  }
+
+  function setupDoctorSidebar() {
+    const nav = document.querySelector('.sidebar-nav');
+    if (!nav) return;
+
+    nav.innerHTML = `
+      <span class="nav-section-label">Médecin</span>
+      <div class="nav-link active" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
+      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <span class="nav-section-label">Dossier</span>
+      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+    `;
+    initSidebar();
+  }
+
+  function renderDoctorLayout() {
+    const page = document.querySelector('.page-content');
+    page.innerHTML = `
+      <div class="stats-grid" id="doctorStatsGrid">
+        <div class="stat-card">
+          <div class="stat-icon blue">🧑‍🤝‍🧑</div>
+          <div class="stat-info">
+            <h3 id="docStatPatients">-</h3>
+            <p>Mes patients</p>
+            <span class="stat-change neutral">suivis actuellement</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">📅</div>
+          <div class="stat-info">
+            <h3 id="docStatApts">-</h3>
+            <p>Rendez-vous patients</p>
+            <span class="stat-change neutral">à venir</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">🚨</div>
+          <div class="stat-info">
+            <h3 id="docStatAlerts">-</h3>
+            <p>Alertes non lues</p>
+            <span class="stat-change neutral">dossiers patients</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">📁</div>
+          <div class="stat-info">
+            <h3 id="docStatDocs">-</h3>
+            <p>Documents</p>
+            <span class="stat-change neutral">dans vos dossiers</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="tabPatientsBtn">Mes patients</button>
+          <button class="btn btn-outline" id="tabPatientDetailsBtn">Détails patient</button>
+        </div>
+      </div>
+
+      <div id="doctorPatientsTab" class="dashboard-grid">
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-header">
+            <span class="card-title">🧑‍⚕️ Mes patients</span>
+          </div>
+          <div class="card-body" id="doctorPatientsList"></div>
+        </div>
+
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-header">
+            <span class="card-title">➕ Patients disponibles</span>
+          </div>
+          <div class="card-body" id="doctorAvailablePatientsList"></div>
+        </div>
+      </div>
+
+      <div id="doctorPatientDetailsTab" class="dashboard-grid" style="display:none;">
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-header">
+            <span class="card-title">📋 Informations médicales du patient</span>
+            <div class="flex gap-2">
+              <button class="btn btn-outline btn-sm" id="doctorNotifyBtn">Envoyer notification</button>
+              <button class="btn btn-primary btn-sm" id="doctorCreateAptBtn">Ajouter rendez-vous</button>
+            </div>
+          </div>
+          <div class="card-body" id="doctorPatientDetailsBody">
+            <div class="empty-state">
+              <div class="empty-state-icon">🧑‍⚕️</div>
+              <h3>Sélectionnez un patient</h3>
+              <p>Ouvrez l'onglet Mes patients puis cliquez sur "Voir dossier".</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('tabPatientsBtn').addEventListener('click', () => toggleDoctorTab('patients'));
+    document.getElementById('tabPatientDetailsBtn').addEventListener('click', () => toggleDoctorTab('details'));
+    document.getElementById('doctorNotifyBtn').addEventListener('click', sendDoctorNotification);
+    document.getElementById('doctorCreateAptBtn').addEventListener('click', createDoctorAppointment);
+  }
+
+  function toggleDoctorTab(tab) {
+    const patientsTab = document.getElementById('doctorPatientsTab');
+    const detailsTab = document.getElementById('doctorPatientDetailsTab');
+    const patientsBtn = document.getElementById('tabPatientsBtn');
+    const detailsBtn = document.getElementById('tabPatientDetailsBtn');
+
+    const showPatients = tab === 'patients';
+    patientsTab.style.display = showPatients ? 'grid' : 'none';
+    detailsTab.style.display = showPatients ? 'none' : 'grid';
+    patientsBtn.className = showPatients ? 'btn btn-primary' : 'btn btn-outline';
+    detailsBtn.className = showPatients ? 'btn btn-outline' : 'btn btn-primary';
+  }
+
+  async function loadDoctorDashboard() {
+    setupDoctorSidebar();
+    renderDoctorLayout();
+
+    document.getElementById('welcomeSub').textContent = 'Vue médicale de vos patients';
+    const overview = await apiFetch('/doctors/me/overview');
+    const [myPatients, freePatients] = await Promise.all([
+      apiFetch('/doctors/me/patients'),
+      apiFetch('/doctors/me/patients/available')
+    ]);
+    doctorPatients = myPatients;
+    availablePatients = freePatients;
+
+    document.getElementById('docStatPatients').textContent = overview.patientCount;
+    document.getElementById('docStatApts').textContent = overview.upcomingAppointments;
+    document.getElementById('docStatAlerts').textContent = overview.alertsCount;
+    document.getElementById('docStatDocs').textContent = overview.recentDocuments;
+
+    renderDoctorPatientsList();
+    renderDoctorAvailablePatientsList();
+  }
+
+  function renderDoctorPatientsList() {
+    const container = document.getElementById('doctorPatientsList');
+    if (!doctorPatients.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🧑‍🤝‍🧑</div><h3>Aucun patient attribué</h3><p>Ajoutez ou assignez des patients pour commencer.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="med-list">
+        ${doctorPatients.map((p) => {
+          const profile = p.profile || {};
+          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
+          return `
+            <div class="med-card" style="align-items:flex-start;">
+              <div class="med-color" style="background:var(--primary-light); color:var(--primary);">👤</div>
+              <div class="med-info" style="flex:1;">
+                <h4>${fullName}</h4>
+                <p>${p.email}</p>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Diagnostic: ${profile.diagnosis || 'Non renseigné'}</p>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="openDoctorPatientDetails('${p.id}')">Voir dossier</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function renderDoctorAvailablePatientsList() {
+    const container = document.getElementById('doctorAvailablePatientsList');
+    if (!availablePatients.length) {
+      container.innerHTML = `<p class="text-sm">Aucun patient disponible à l'assignation.</p>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="med-list">
+        ${availablePatients.map((p) => {
+          const profile = p.profile || {};
+          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
+          return `
+            <div class="med-card" style="align-items:flex-start;">
+              <div class="med-color" style="background:var(--surface-3); color:var(--text-secondary);">🧾</div>
+              <div class="med-info" style="flex:1;">
+                <h4>${fullName}</h4>
+                <p>${p.email}</p>
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="assignPatientToMe('${p.id}')">Assigner</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  async function assignPatientToMe(patientId) {
+    await apiFetch(`/doctors/me/patients/${patientId}/assign`, {
+      method: 'PUT'
+    });
+    showToast('Patient assigné avec succès.');
+    await loadDoctorDashboard();
+  }
+
+  async function openDoctorPatientDetails(patientId) {
+    selectedPatientId = patientId;
+    toggleDoctorTab('details');
+    const body = document.getElementById('doctorPatientDetailsBody');
+    body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Chargement du dossier...</h3></div>`;
+
+    const data = await apiFetch(`/doctors/me/patients/${patientId}/medical-info`);
+    const patient = data.patient;
+    const profile = patient.profile || {};
+    const vitals = getSymptomVitals(data.latestSymptom);
+
+    body.innerHTML = `
+      <div class="dashboard-grid-3">
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-body">
+            <h3 style="margin-bottom:8px;">${(profile.firstName || '') + ' ' + (profile.lastName || '')}</h3>
+            <p style="color:var(--text-secondary);">${patient.email}</p>
+            <p class="text-sm">Date de naissance: ${profile.dateOfBirth ? formatDate(profile.dateOfBirth) : 'Non renseignée'}</p>
+            <p class="text-sm">Diagnostic: ${profile.diagnosis || 'Non renseigné'}</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">❤️ Dernières constantes</span></div>
+          <div class="card-body">
+            <p class="text-sm">Fréquence cardiaque: <strong>${vitals.heartRate || 'N/A'} bpm</strong></p>
+            <p class="text-sm">Tension: <strong>${vitals.bloodPressure || 'N/A'}</strong></p>
+            <p class="text-sm">Température: <strong>${vitals.temperature || 'N/A'} °C</strong></p>
+            <p class="text-sm">Saturation O₂: <strong>${vitals.oxygenSaturation || 'N/A'} %</strong></p>
+            <p class="text-sm">Symptômes: <strong>${data.latestSymptom && data.latestSymptom.symptoms ? data.latestSymptom.symptoms.length : 0}</strong></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">💊 Traitements</span></div>
+          <div class="card-body">
+            ${data.medications.length ? data.medications.slice(0, 5).map((m) => `<p class="text-sm">• ${m.name} (${m.dosage || '-'})</p>`).join('') : '<p class="text-sm">Aucun traitement</p>'}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📅 Rendez-vous</span></div>
+          <div class="card-body">
+            ${data.appointments.length ? data.appointments.slice(0, 5).map((a) => `<p class="text-sm">• ${a.title || a.type} - ${formatDate(a.date)} ${a.time || ''}</p>`).join('') : '<p class="text-sm">Aucun rendez-vous</p>'}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📁 Documents</span></div>
+          <div class="card-body">
+            ${data.documents.length ? data.documents.slice(0, 5).map((d) => `<p class="text-sm">• ${d.name}</p>`).join('') : '<p class="text-sm">Aucun document</p>'}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🔔 Notifications récentes</span></div>
+          <div class="card-body">
+            ${data.notifications.length ? data.notifications.slice(0, 5).map((n) => `<p class="text-sm">• ${n.title}</p>`).join('') : '<p class="text-sm">Aucune notification</p>'}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  async function sendDoctorNotification() {
+    if (!selectedPatientId) {
+      showToast('Sélectionnez un patient d\'abord.', 'warning');
+      return;
+    }
+
+    const title = prompt('Titre de la notification à envoyer au patient :');
+    if (!title) return;
+    const message = prompt('Message à envoyer :');
+    if (!message) return;
+
+    await apiFetch(`/doctors/me/patients/${selectedPatientId}/notify`, {
+      method: 'POST',
+      body: JSON.stringify({ title, message, type: 'message' })
+    });
+    showToast('Notification envoyée au patient.');
+  }
+
+  async function createDoctorAppointment() {
+    if (!selectedPatientId) {
+      showToast('Sélectionnez un patient d\'abord.', 'warning');
+      return;
+    }
+
+    const title = prompt('Titre du rendez-vous :', 'Suivi médical');
+    if (!title) return;
+    const date = prompt('Date du rendez-vous (YYYY-MM-DD) :');
+    if (!date) return;
+    const time = prompt('Heure du rendez-vous (HH:mm) :', '10:00');
+    if (!time) return;
+    const location = prompt('Lieu (optionnel) :', 'Cabinet médical');
+
+    await apiFetch(`/doctors/me/patients/${selectedPatientId}/appointments`, {
+      method: 'POST',
+      body: JSON.stringify({
+        title,
+        date,
+        time,
+        location: location || '',
+        type: 'consultation',
+        status: 'upcoming'
+      })
+    });
+
+    showToast('Rendez-vous ajouté pour le patient.');
+    await openDoctorPatientDetails(selectedPatientId);
+  }
+
+  async function loadPatientDashboard() {
     // Welcome
     const hour = new Date().getHours();
     const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
@@ -255,8 +773,9 @@
     const futureApts = appointments.filter(a => isFuture(a.date));
     document.getElementById('statApts').textContent = futureApts.length;
 
-    if (latestSymptom && latestSymptom.heartRate) {
-      document.getElementById('statHR').textContent = latestSymptom.heartRate;
+    const latestVitals = getSymptomVitals(latestSymptom);
+    if (latestVitals.heartRate) {
+      document.getElementById('statHR').textContent = latestVitals.heartRate;
     }
 
     // Appointments
@@ -295,14 +814,14 @@
           <div class="apt-month">${getMonthShort(a.date)}</div>
         </div>
         <div class="apt-info">
-          <h4>${a.doctorName}</h4>
+          <h4>${a.title || 'Rendez-vous'}</h4>
           <div class="apt-meta">
-            <span>🏥 ${a.specialty || a.type}</span>
+            <span>🏥 ${a.type || 'consultation'}</span>
             <span>⏰ ${a.time}</span>
             ${a.location ? `<span>📍 ${a.location.substring(0, 40)}${a.location.length > 40 ? '...' : ''}</span>` : ''}
           </div>
         </div>
-        <span class="apt-status ${a.status}">${a.status === 'confirmed' ? 'Confirmé' : 'En attente'}</span>
+        <span class="apt-status ${a.status}">${a.status === 'upcoming' ? 'À venir' : a.status === 'completed' ? 'Terminé' : a.status === 'cancelled' ? 'Annulé' : 'En attente'}</span>
       </div>
     `).join('')}</div>`;
   }
@@ -326,9 +845,10 @@
   }
 
   function renderHealthScore(sym) {
-    const hr = sym.heartRate;
-    const temp = sym.temperature;
-    const o2 = sym.oxygenSaturation;
+    const vitals = getSymptomVitals(sym);
+    const hr = vitals.heartRate;
+    const temp = vitals.temperature;
+    const o2 = vitals.oxygenSaturation;
 
     let score = 100;
     let warnings = 0;
@@ -344,9 +864,9 @@
     }
 
     // Blood pressure
-    if (sym.bloodPressure) {
-      document.getElementById('hmBP').textContent = sym.bloodPressure;
-      const [sys] = sym.bloodPressure.split('/').map(Number);
+    if (vitals.bloodPressure) {
+      document.getElementById('hmBP').textContent = vitals.bloodPressure;
+      const [sys] = vitals.bloodPressure.split('/').map(Number);
       const bpOk = sys >= 90 && sys <= 140;
       document.getElementById('hmBPStatus').textContent = bpOk ? 'Normal' : 'Attention';
       document.getElementById('hmBPStatus').className = 'health-metric-status ' + (bpOk ? 'status-normal' : 'status-warning');
@@ -390,7 +910,26 @@
     }, 100);
   }
 
-  loadDashboard().catch(console.error);
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  document.getElementById('welcomeTitle').textContent = `${greet} ${user.profile.firstName || ''} 👋`;
+
+  if (user.role === 'doctor') {
+    loadDoctorDashboard().catch((err) => {
+      console.error(err);
+      showToast('Erreur chargement dashboard médecin', 'error');
+    });
+  } else {
+    loadPatientDashboard().catch((err) => {
+      console.error(err);
+      showToast('Erreur chargement dashboard patient', 'error');
+    });
+  }
+
+  initAiDialog();
+
+  window.openDoctorPatientDetails = openDoctorPatientDetails;
+  window.assignPatientToMe = assignPatientToMe;
 </script>
 </body>
 </html>

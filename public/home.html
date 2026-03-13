@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Accueil</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="landing-page">
+  <header class="landing-header">
+    <a class="landing-brand" href="/">SuiviPatient</a>
+    <nav class="landing-nav">
+      <a href="/auth" class="btn btn-ghost">Connexion</a>
+      <a href="/auth#register" class="btn btn-primary">Créer un compte</a>
+    </nav>
+  </header>
+
+  <main class="landing-main">
+    <section class="hero-section">
+      <div class="hero-copy">
+        <p class="hero-kicker">SUIVI POST-HOSPITALISATION</p>
+        <h1>Votre rétablissement,
+          <span>guidé chaque jour</span>
+        </h1>
+        <p class="hero-subtitle">
+          SuiviPatient aide les patients et les médecins à rester connectés: médicaments,
+          symptômes, rendez-vous, et assistant IA dans un seul espace.
+        </p>
+        <div class="hero-actions">
+          <a href="/auth" class="btn btn-primary btn-lg">Commencer maintenant</a>
+          <a href="/dashboard" class="btn btn-outline btn-lg">Accéder au tableau de bord</a>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <p class="hero-card-title">Aujourd'hui sur SuiviPatient</p>
+        <div class="hero-metrics">
+          <article>
+            <h3>98%</h3>
+            <p>prises de traitement
+              confirmées</p>
+          </article>
+          <article>
+            <h3>24/7</h3>
+            <p>assistant IA
+              disponible</p>
+          </article>
+          <article>
+            <h3>+120</h3>
+            <p>équipes médicales
+              actives</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-features-grid">
+      <article class="landing-feature-card">
+        <h3>Suivi intelligent</h3>
+        <p>Historique des constantes, alertes utiles et vue claire des progrès.</p>
+      </article>
+      <article class="landing-feature-card">
+        <h3>Coordination médecin-patient</h3>
+        <p>Un médecin peut suivre un ou plusieurs patients dans un même espace.</p>
+      </article>
+      <article class="landing-feature-card">
+        <h3>Expérience simple</h3>
+        <p>Interface claire sur mobile et desktop pour ne rien oublier au quotidien.</p>
+      </article>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+  <script>
+    // Si déjà connecté, garder un accès direct au dashboard.
+    if (getToken()) {
+      const cta = document.querySelector('.hero-actions a.btn-primary');
+      if (cta) cta.setAttribute('href', '/dashboard');
+    }
+
+    // Permet d'ouvrir directement la vue inscription depuis /auth#register.
+    if (window.location.hash === '#register') {
+      window.location.href = '/auth#register';
+    }
+  </script>
+</body>
+</html>

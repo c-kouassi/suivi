@@ -132,6 +132,41 @@
   requireAuth();
   initSidebar();
 
+  const currentUser = getUser();
+
+  if (currentUser && currentUser.role === 'doctor') {
+    const nav = document.querySelector('.sidebar-nav');
+    if (nav) {
+      nav.innerHTML = `
+        <span class="nav-section-label">Médecin</span>
+        <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
+        <div class="nav-link active" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+        <span class="nav-section-label">Dossier</span>
+        <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+      `;
+      initSidebar();
+    }
+
+    const topbarTitle = document.querySelector('.topbar-left h1');
+    const topbarSub = document.querySelector('.topbar-left p');
+    const aiInfoTitle = document.querySelector('.ai-info h3');
+    const aiInfoHint = document.querySelector('.chat-header-info div[style*="max-width"]');
+    const suggestions = document.getElementById('suggestions');
+
+    if (topbarTitle) topbarTitle.textContent = '🤖 Assistant IA médecin';
+    if (topbarSub) topbarSub.textContent = 'Aide au suivi clinique et communication patient';
+    if (aiInfoTitle) aiInfoTitle.textContent = 'Assistant clinique IA';
+    if (aiInfoHint) aiInfoHint.innerHTML = 'Conseils organisationnels. Le jugement médical reste prioritaire.';
+    if (suggestions) {
+      suggestions.innerHTML = `
+        <span class="chat-suggestion" onclick="sendSuggestion(this)">Suivi patient</span>
+        <span class="chat-suggestion" onclick="sendSuggestion(this)">Rédiger une notification</span>
+        <span class="chat-suggestion" onclick="sendSuggestion(this)">Préparer consultation</span>
+        <span class="chat-suggestion" onclick="sendSuggestion(this)">Prioriser alertes</span>
+      `;
+    }
+  }
+
   const chatMessages = document.getElementById('chatMessages');
   const chatInput = document.getElementById('chatInput');
   let isTyping = false;
@@ -159,8 +194,10 @@
   }
 
   function renderMessage(msg) {
-    const isUser = msg.role === 'user';
-    const content = isUser ? msg.content : renderMarkdown(msg.content);
+    const role = msg.role || msg.type;
+    const contentRaw = msg.content || msg.message || '';
+    const isUser = role === 'user';
+    const content = isUser ? contentRaw : renderMarkdown(contentRaw);
     const div = document.createElement('div');
     div.className = `message ${isUser ? 'user' : 'ai'}`;
     div.innerHTML = `
@@ -200,15 +237,18 @@
 
   async function loadMessages() {
     try {
-      const messages = await apiFetch('/chat/messages');
+      const messages = await apiFetch('/chat');
       chatMessages.innerHTML = '';
 
       if (messages.length === 0) {
         const user = getUser();
+        const isDoctor = user && user.role === 'doctor';
         const welcomeMsg = {
           id: 'welcome',
-          role: 'assistant',
-          content: `Bonjour ${user.profile.firstName} ! Je suis votre **assistant IA post-hospitalisation**. 😊\n\nJe suis là pour vous accompagner dans votre rétablissement. Je peux répondre à vos questions sur :\n- 💊 Vos médicaments\n- 🍽️ L'alimentation\n- 🏃 La reprise des activités\n- 🩹 Les soins de cicatrice\n- ❤️ Le suivi cardiaque\n\nComment puis-je vous aider aujourd'hui ?`,
+          type: 'ai',
+          message: isDoctor
+            ? `Bonjour Dr ${user.profile.lastName || ''} ! Je suis votre **assistant IA clinique**.\n\nJe peux vous aider à :\n- organiser le suivi des patients\n- préparer des notifications\n- structurer les rappels de consultation\n\nComment puis-je vous aider aujourd'hui ?`
+            : `Bonjour ${user.profile.firstName} ! Je suis votre **assistant IA post-hospitalisation**. 😊\n\nJe suis là pour vous accompagner dans votre rétablissement. Je peux répondre à vos questions sur :\n- 💊 Vos médicaments\n- 🍽️ L'alimentation\n- 🏃 La reprise des activités\n- 🩹 Les soins de cicatrice\n- ❤️ Le suivi cardiaque\n\nComment puis-je vous aider aujourd'hui ?`,
           timestamp: new Date().toISOString()
         };
         chatMessages.appendChild(renderMessage(welcomeMsg));

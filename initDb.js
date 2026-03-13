@@ -17,12 +17,25 @@ async function initializeDatabase() {
     // Ajouter données d'exemple
     console.log('📝 Ajout des données d\'exemple...');
     
+    const doctor = await User.create({
+      id: 'doctor-001',
+      email: 'sophie.martin@hopital.fr',
+      password: '$2b$10$AFfwYpw6inDF8SP83P8kQua46WgGEbL.ZfMc4zjzhUa.pqFUgZSSy', // password
+      role: 'doctor',
+      profile: {
+        firstName: 'Sophie',
+        lastName: 'Martin',
+        speciality: 'Cardiologie'
+      }
+    });
+
     // Créer patients
     const patient = await User.create({
       id: 'patient-001',
       email: 'jean.dupont@email.com',
-      password: '$2a$10$5rLqeqkAeLiW5lEqC7EpL.JqJ5DpK4L3N2M8P9Q0R1S2T3U4V5W6X7', // password
+      password: '$2b$10$AFfwYpw6inDF8SP83P8kQua46WgGEbL.ZfMc4zjzhUa.pqFUgZSSy', // password
       role: 'patient',
+      treatingDoctorId: 'doctor-001',
       profile: {
         firstName: 'Jean',
         lastName: 'Dupont',
@@ -34,18 +47,6 @@ async function initializeDatabase() {
         treatingDoctor: 'Dr. Sophie Martin',
         hospitalStay: 'CHU Paris Nord - Service Cardiologie',
         avatar: 'JD'
-      }
-    });
-
-    const doctor = await User.create({
-      id: 'doctor-001',
-      email: 'sophie.martin@hopital.fr',
-      password: '$2a$10$5rLqeqkAeLiW5lEqC7EpL.JqJ5DpK4L3N2M8P9Q0R1S2T3U4V5W6X7', // password
-      role: 'doctor',
-      profile: {
-        firstName: 'Sophie',
-        lastName: 'Martin',
-        speciality: 'Cardiologie'
       }
     });
 

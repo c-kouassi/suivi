@@ -39,6 +39,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        treatingDoctorId: user.treatingDoctorId,
         profile: user.profile || {}
       }
     });
@@ -51,7 +52,7 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, dateOfBirth, phone } = req.body;
+    const { email, password, firstName, lastName, dateOfBirth, phone, role, speciality, treatingDoctorId } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' });
@@ -62,26 +63,53 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Un compte avec cet email existe déjà' });
     }
 
+    const userRole = role === 'doctor' ? 'doctor' : 'patient';
+
+    let doctor = null;
+    if (userRole === 'patient' && treatingDoctorId) {
+      doctor = await User.findOne({
+        where: { id: treatingDoctorId, role: 'doctor' }
+      });
+
+      if (!doctor) {
+        return res.status(400).json({ error: 'Médecin référent introuvable' });
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const avatar = `${firstName[0]}${lastName[0]}`.toUpperCase();
 
-    const newUser = await User.create({
-      id: `patient-${uuidv4()}`,
-      email,
-      password: hashedPassword,
-      role: 'patient',
-      profile: {
-        firstName,
-        lastName,
+    const baseProfile = {
+      firstName,
+      lastName,
+      avatar,
+      phone: phone || null
+    };
+
+    const profile = userRole === 'doctor'
+      ? {
+        ...baseProfile,
+        speciality: speciality || null
+      }
+      : {
+        ...baseProfile,
         dateOfBirth: dateOfBirth || null,
-        phone: phone || null,
         address: null,
         hospitalDischargeDate: null,
         diagnosis: null,
-        treatingDoctor: null,
-        hospitalStay: null,
-        avatar
-      }
+        treatingDoctor: doctor
+          ? `Dr. ${(doctor.profile && doctor.profile.firstName) || ''} ${(doctor.profile && doctor.profile.lastName) || ''}`.trim()
+          : null,
+        hospitalStay: null
+      };
+
+    const newUser = await User.create({
+      id: `${userRole}-${uuidv4()}`,
+      email,
+      password: hashedPassword,
+      role: userRole,
+      treatingDoctorId: userRole === 'patient' ? (treatingDoctorId || null) : null,
+      profile
     });
 
     const token = jwt.sign(
@@ -96,6 +124,7 @@ router.post('/register', async (req, res) => {
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
+        treatingDoctorId: newUser.treatingDoctorId,
         profile: newUser.profile || {}
       }
     });
@@ -118,6 +147,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      treatingDoctorId: user.treatingDoctorId,
       profile: user.profile || {}
     });
   } catch (err) {

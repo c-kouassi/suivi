@@ -6,6 +6,112 @@
   <title>SuiviPatient - Mon Profil</title>
   <link rel="stylesheet" href="/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .ai-fab {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      z-index: 1200;
+    }
+
+    .ai-dialog {
+      position: fixed;
+      right: 24px;
+      bottom: 92px;
+      width: min(420px, calc(100vw - 24px));
+      max-height: 72vh;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1201;
+    }
+
+    .ai-dialog.open { display: flex; }
+
+    .ai-dialog-header {
+      padding: 12px 14px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    .ai-dialog-body {
+      padding: 12px;
+      overflow-y: auto;
+      min-height: 220px;
+      max-height: 48vh;
+      background: var(--surface-2);
+    }
+
+    .ai-mini-msg {
+      margin-bottom: 10px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .ai-mini-msg.user { flex-direction: row-reverse; }
+
+    .ai-mini-bubble {
+      background: white;
+      border: 1px solid var(--border-light);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.83rem;
+      max-width: 84%;
+      line-height: 1.45;
+    }
+
+    .ai-mini-msg.user .ai-mini-bubble {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .ai-dialog-input {
+      display: flex;
+      gap: 8px;
+      border-top: 1px solid var(--border);
+      padding: 10px;
+      background: white;
+    }
+
+    .ai-dialog-input input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .ai-dialog-input button {
+      border: none;
+      border-radius: 8px;
+      padding: 0 12px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
 <div class="app-layout">
@@ -130,14 +236,120 @@
   </div>
 </div>
 
+<button class="ai-fab" id="aiFab" title="Assistant IA">🤖</button>
+<div class="ai-dialog" id="aiDialog">
+  <div class="ai-dialog-header">
+    <span id="aiDialogTitle">Assistant IA</span>
+    <button class="btn btn-ghost btn-sm" id="aiDialogClose" style="color:white;">✕</button>
+  </div>
+  <div class="ai-dialog-body" id="aiDialogBody"></div>
+  <div class="ai-dialog-input">
+    <input type="text" id="aiDialogInput" placeholder="Posez votre question..." maxlength="700">
+    <button id="aiDialogSend">Envoyer</button>
+  </div>
+</div>
+
 <script src="/js/app.js"></script>
 <script>
   requireAuth();
   initSidebar();
 
+  let aiDialogBusy = false;
+
+  function escapeHTML(value) {
+    return (value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function addAiDialogMessage(role, text) {
+    const body = document.getElementById('aiDialogBody');
+    const div = document.createElement('div');
+    div.className = `ai-mini-msg ${role === 'user' ? 'user' : 'ai'}`;
+    div.innerHTML = `<div class="ai-mini-bubble ${role === 'ai' ? 'md-content' : ''}">${role === 'ai' ? renderMarkdown(text) : escapeHTML(text)}</div>`;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function initAiDialog(user) {
+    const fab = document.getElementById('aiFab');
+    const dialog = document.getElementById('aiDialog');
+    const closeBtn = document.getElementById('aiDialogClose');
+    const sendBtn = document.getElementById('aiDialogSend');
+    const input = document.getElementById('aiDialogInput');
+    const title = document.getElementById('aiDialogTitle');
+
+    title.textContent = user.role === 'doctor' ? 'Assistant IA médecin' : 'Assistant IA patient';
+
+    fab.addEventListener('click', () => {
+      dialog.classList.toggle('open');
+      if (dialog.classList.contains('open')) {
+        input.focus();
+        if (!document.getElementById('aiDialogBody').children.length) {
+          addAiDialogMessage('ai', user.role === 'doctor'
+            ? 'Bonjour Docteur. Je peux vous aider sur l\'organisation du suivi patient.'
+            : 'Bonjour. Je peux vous aider pour vos questions de suivi post-hospitalisation.');
+        }
+      }
+    });
+
+    closeBtn.addEventListener('click', () => dialog.classList.remove('open'));
+    sendBtn.addEventListener('click', sendAiDialogMessage);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendAiDialogMessage();
+      }
+    });
+  }
+
+  async function sendAiDialogMessage() {
+    if (aiDialogBusy) return;
+    const input = document.getElementById('aiDialogInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    aiDialogBusy = true;
+    input.value = '';
+    addAiDialogMessage('user', text);
+
+    try {
+      const data = await apiFetch('/chat/send', {
+        method: 'POST',
+        body: JSON.stringify({ content: text })
+      });
+      addAiDialogMessage('ai', data.aiResponse.message || data.aiResponse.content || 'Réponse indisponible');
+    } catch (err) {
+      addAiDialogMessage('ai', 'Erreur lors de la réponse IA. Veuillez réessayer.');
+    } finally {
+      aiDialogBusy = false;
+    }
+  }
+
   async function loadProfile() {
     const user = getUser();
     if (!user) return;
+
+    if (user.role === 'doctor') {
+      const nav = document.querySelector('.sidebar-nav');
+      if (nav) {
+        nav.innerHTML = `
+          <span class="nav-section-label">Médecin</span>
+          <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
+          <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+          <span class="nav-section-label">Dossier</span>
+          <div class="nav-link active" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
+        `;
+        initSidebar();
+      }
+      document.querySelector('.topbar-left p').textContent = 'Informations professionnelles et compte médecin';
+      document.querySelector('.card-title').textContent = '👤 Informations professionnelles';
+    }
+
+    initAiDialog(user);
 
     const p = user.profile;
 
@@ -160,29 +372,49 @@
       { label: 'Email', value: user.email }
     ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
 
-    document.getElementById('medicalInfo').innerHTML = [
-      { label: 'Diagnostic', value: p.diagnosis || '-' },
-      { label: 'Médecin traitant', value: p.treatingDoctor || '-' },
-      { label: 'Établissement', value: p.hospitalStay || '-' },
-      { label: 'Date de sortie', value: p.hospitalDischargeDate ? formatDate(p.hospitalDischargeDate) : '-' }
-    ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+    const medicalBlock = user.role === 'doctor'
+      ? [
+        { label: 'Spécialité', value: p.speciality || '-' },
+        { label: 'Email professionnel', value: user.email },
+        { label: 'Rôle', value: 'Médecin' },
+        { label: 'Patients suivis', value: 'Voir dashboard médecin' }
+      ]
+      : [
+        { label: 'Diagnostic', value: p.diagnosis || '-' },
+        { label: 'Médecin traitant', value: p.treatingDoctor || '-' },
+        { label: 'Établissement', value: p.hospitalStay || '-' },
+        { label: 'Date de sortie', value: p.hospitalDischargeDate ? formatDate(p.hospitalDischargeDate) : '-' }
+      ];
+
+    document.getElementById('medicalInfo').innerHTML = medicalBlock
+      .map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
 
     // Load stats
     try {
-      const [appointments, medications, symptoms] = await Promise.all([
-        apiFetch('/appointments'),
-        apiFetch('/medications'),
-        apiFetch('/symptoms')
-      ]);
+      if (user.role === 'doctor') {
+        const overview = await apiFetch('/doctors/me/overview');
+        document.getElementById('summaryInfo').innerHTML = [
+          { label: 'Patients suivis', value: overview.patientCount },
+          { label: 'Rendez-vous à venir', value: overview.upcomingAppointments },
+          { label: 'Alertes non lues', value: overview.alertsCount },
+          { label: 'Documents patients', value: overview.recentDocuments }
+        ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+      } else {
+        const [appointments, medications, symptoms] = await Promise.all([
+          apiFetch('/appointments'),
+          apiFetch('/medications'),
+          apiFetch('/symptoms')
+        ]);
 
-      const days = getDaysSinceDischarge(p.hospitalDischargeDate);
+        const days = getDaysSinceDischarge(p.hospitalDischargeDate);
 
-      document.getElementById('summaryInfo').innerHTML = [
-        { label: 'Jours de convalescence', value: days + ' jours' },
-        { label: 'Médicaments en cours', value: medications.length },
-        { label: 'Relevés de symptômes', value: symptoms.length },
-        { label: 'Rendez-vous totaux', value: appointments.length }
-      ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+        document.getElementById('summaryInfo').innerHTML = [
+          { label: 'Jours de convalescence', value: days + ' jours' },
+          { label: 'Médicaments en cours', value: medications.length },
+          { label: 'Relevés de symptômes', value: symptoms.length },
+          { label: 'Rendez-vous totaux', value: appointments.length }
+        ].map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+      }
     } catch (err) {
       console.error(err);
     }

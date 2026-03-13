@@ -19,6 +19,10 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('patient', 'doctor'),
     defaultValue: 'patient'
   },
+  treatingDoctorId: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   profile: {
     type: DataTypes.JSON,
     defaultValue: {}

@@ -10,13 +10,14 @@ const medicationRoutes = require('./routes/medications');
 const symptomRoutes = require('./routes/symptoms');
 const chatRoutes = require('./routes/chat');
 const patientRoutes = require('./routes/patients');
+const doctorRoutes = require('./routes/doctors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -25,9 +26,11 @@ app.use('/api/medications', medicationRoutes);
 app.use('/api/symptoms', symptomRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/doctors', doctorRoutes);
 
 // Serve frontend pages
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'home.html')));
+app.get('/auth', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
 app.get('/chat', (req, res) => res.sendFile(path.join(__dirname, 'public', 'chat.html')));
 app.get('/symptoms', (req, res) => res.sendFile(path.join(__dirname, 'public', 'symptoms.html')));
