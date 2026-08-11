@@ -22,6 +22,9 @@ async function initializeDatabase() {
       email: 'sophie.martin@hopital.fr',
       password: '$2b$10$AFfwYpw6inDF8SP83P8kQua46WgGEbL.ZfMc4zjzhUa.pqFUgZSSy', // password
       role: 'doctor',
+      doctorReferralCode: 'DOC-SOPHIE1',
+      registrationStatus: 'approved',
+      approvedAt: new Date(),
       profile: {
         firstName: 'Sophie',
         lastName: 'Martin',
@@ -36,6 +39,9 @@ async function initializeDatabase() {
       password: '$2b$10$AFfwYpw6inDF8SP83P8kQua46WgGEbL.ZfMc4zjzhUa.pqFUgZSSy', // password
       role: 'patient',
       treatingDoctorId: 'doctor-001',
+      registrationStatus: 'approved',
+      approvedAt: new Date(),
+      approvedByDoctorId: 'doctor-001',
       profile: {
         firstName: 'Jean',
         lastName: 'Dupont',
@@ -273,6 +279,7 @@ async function initializeDatabase() {
     console.log('\n📋 Identifiants de test:');
     console.log('   Patient: jean.dupont@email.com / password');
     console.log('   Docteur: sophie.martin@hopital.fr / password');
+    console.log('   Code médecin (test): DOC-SOPHIE1');
 
     await sequelize.close();
     process.exit(0);

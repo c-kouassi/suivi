@@ -137,10 +137,11 @@
           </div>
 
           <div class="form-group" id="patientDoctorGroup">
-            <label>Médecin référent (optionnel)</label>
-            <select class="form-control" id="regTreatingDoctorId">
-              <option value="">Aucun pour le moment</option>
-            </select>
+            <label>Code médecin *</label>
+            <input type="text" class="form-control" id="regDoctorCode" placeholder="Ex: DOC-AB12CD">
+            <p class="text-sm" style="margin-top:8px; color:var(--text-muted);">
+              Demandez ce code à votre médecin. Votre compte sera activé après sa validation.
+            </p>
           </div>
 
           <button type="submit" class="btn btn-primary btn-full btn-lg">
@@ -180,45 +181,23 @@
       return selected ? selected.value : 'patient';
     }
 
-    async function loadDoctorsForSelect() {
-      const select = document.getElementById('regTreatingDoctorId');
-      try {
-        const res = await fetch('/api/doctors/available');
-        const doctors = await res.json();
-
-        if (!res.ok) {
-          return;
-        }
-
-        select.innerHTML = '<option value="">Aucun pour le moment</option>';
-        doctors.forEach((doctor) => {
-          const firstName = doctor.profile && doctor.profile.firstName ? doctor.profile.firstName : '';
-          const lastName = doctor.profile && doctor.profile.lastName ? doctor.profile.lastName : '';
-          const speciality = doctor.profile && doctor.profile.speciality ? ` (${doctor.profile.speciality})` : '';
-          const option = document.createElement('option');
-          option.value = doctor.id;
-          option.textContent = `Dr. ${firstName} ${lastName}`.trim() + speciality;
-          select.appendChild(option);
-        });
-      } catch (err) {
-        // Pas bloquant: l'utilisateur peut continuer son inscription.
-      }
-    }
-
     function refreshRegisterRoleUI() {
       const role = getSelectedRegisterRole();
       const doctorSpecialityGroup = document.getElementById('doctorSpecialityGroup');
       const patientDoctorGroup = document.getElementById('patientDoctorGroup');
       const dob = document.getElementById('regDob');
+      const doctorCode = document.getElementById('regDoctorCode');
 
       if (role === 'doctor') {
         doctorSpecialityGroup.classList.remove('hidden');
         patientDoctorGroup.classList.add('hidden');
         dob.disabled = true;
+        doctorCode.required = false;
       } else {
         doctorSpecialityGroup.classList.add('hidden');
         patientDoctorGroup.classList.remove('hidden');
         dob.disabled = false;
+        doctorCode.required = true;
       }
     }
 
@@ -231,7 +210,6 @@
       document.getElementById('registerView').classList.remove('hidden');
     }
 
-    loadDoctorsForSelect();
     refreshRegisterRoleUI();
 
     // Login form
@@ -266,7 +244,9 @@
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const alert = document.getElementById('registerAlert');
+      const form = document.getElementById('registerForm');
       alert.classList.add('hidden');
+      alert.classList.remove('alert-success', 'alert-danger');
 
       try {
         const role = getSelectedRegisterRole();
@@ -281,14 +261,24 @@
             phone: document.getElementById('regPhone').value,
             role,
             speciality: role === 'doctor' ? document.getElementById('regSpeciality').value : null,
-            treatingDoctorId: role === 'patient' ? document.getElementById('regTreatingDoctorId').value : null
+            doctorCode: role === 'patient' ? document.getElementById('regDoctorCode').value : null
           })
         });
+
+        if (role === 'patient') {
+          alert.textContent = '✅ ' + (data.message || 'Demande envoyée. En attente de validation médecin.');
+          alert.classList.add('alert-success');
+          alert.classList.remove('hidden');
+          form.reset();
+          refreshRegisterRoleUI();
+          return;
+        }
 
         setAuth(data.token, data.user);
         window.location.href = '/dashboard';
       } catch (err) {
         alert.textContent = '⚠️ ' + err.message;
+        alert.classList.add('alert-danger');
         alert.classList.remove('hidden');
       }
     });

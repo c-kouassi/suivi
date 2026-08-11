@@ -23,7 +23,8 @@ router.get('/me/patients', authenticateToken, ensureDoctor, async (req, res) => 
     const patients = await User.findAll({
       where: {
         role: 'patient',
-        treatingDoctorId: req.user.id
+        treatingDoctorId: req.user.id,
+        registrationStatus: 'approved'
       },
       attributes: ['id', 'email', 'role', 'treatingDoctorId', 'profile', 'createdAt', 'updatedAt'],
       order: [['createdAt', 'DESC']]
@@ -42,7 +43,8 @@ router.get('/me/patients/available', authenticateToken, ensureDoctor, async (req
     const patients = await User.findAll({
       where: {
         role: 'patient',
-        treatingDoctorId: null
+        treatingDoctorId: null,
+        registrationStatus: 'approved'
       },
       attributes: ['id', 'email', 'profile', 'createdAt'],
       order: [['createdAt', 'DESC']]
@@ -61,7 +63,8 @@ router.get('/me/overview', authenticateToken, ensureDoctor, async (req, res) => 
     const patients = await User.findAll({
       where: {
         role: 'patient',
-        treatingDoctorId: req.user.id
+        treatingDoctorId: req.user.id,
+        registrationStatus: 'approved'
       },
       attributes: ['id']
     });
@@ -267,7 +270,8 @@ router.put('/me/patients/:patientId/assign', authenticateToken, ensureDoctor, as
     const patient = await User.findOne({
       where: {
         id: req.params.patientId,
-        role: 'patient'
+        role: 'patient',
+        registrationStatus: 'approved'
       }
     });
 
@@ -325,6 +329,90 @@ router.put('/me/patients/:patientId/unassign', authenticateToken, ensureDoctor, 
     });
 
     res.json(patient);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// GET /api/doctors/me/patient-registrations/pending
+router.get('/me/patient-registrations/pending', authenticateToken, ensureDoctor, async (req, res) => {
+  try {
+    const pendingPatients = await User.findAll({
+      where: {
+        role: 'patient',
+        treatingDoctorId: req.user.id,
+        registrationStatus: 'pending'
+      },
+      attributes: ['id', 'email', 'treatingDoctorId', 'registrationStatus', 'createdAt', 'profile'],
+      order: [['createdAt', 'ASC']]
+    });
+
+    res.json(pendingPatients);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// PUT /api/doctors/me/patient-registrations/:patientId/approve
+router.put('/me/patient-registrations/:patientId/approve', authenticateToken, ensureDoctor, async (req, res) => {
+  try {
+    const patient = await User.findOne({
+      where: {
+        id: req.params.patientId,
+        role: 'patient',
+        treatingDoctorId: req.user.id,
+        registrationStatus: 'pending'
+      }
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Demande d\'inscription introuvable' });
+    }
+
+    await patient.update({
+      registrationStatus: 'approved',
+      approvedAt: new Date(),
+      approvedByDoctorId: req.user.id
+    });
+
+    res.json({
+      message: 'Inscription patient validée.',
+      patient
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// PUT /api/doctors/me/patient-registrations/:patientId/reject
+router.put('/me/patient-registrations/:patientId/reject', authenticateToken, ensureDoctor, async (req, res) => {
+  try {
+    const patient = await User.findOne({
+      where: {
+        id: req.params.patientId,
+        role: 'patient',
+        treatingDoctorId: req.user.id,
+        registrationStatus: 'pending'
+      }
+    });
+
+    if (!patient) {
+      return res.status(404).json({ error: 'Demande d\'inscription introuvable' });
+    }
+
+    await patient.update({
+      registrationStatus: 'rejected',
+      approvedAt: null,
+      approvedByDoctorId: null
+    });
+
+    res.json({
+      message: 'Inscription patient refusée.',
+      patient
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

@@ -345,6 +345,7 @@
   const user = getUser();
   let doctorPatients = [];
   let availablePatients = [];
+  let pendingRegistrations = [];
   let selectedPatientId = null;
   let aiDialogBusy = false;
 
@@ -470,8 +471,8 @@
           <div class="stat-icon red">🚨</div>
           <div class="stat-info">
             <h3 id="docStatAlerts">-</h3>
-            <p>Alertes non lues</p>
-            <span class="stat-change neutral">dossiers patients</span>
+            <p>Inscriptions en attente</p>
+            <span class="stat-change neutral">à valider</span>
           </div>
         </div>
         <div class="stat-card">
@@ -487,6 +488,7 @@
       <div class="card" style="margin-bottom:16px;">
         <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="tabPatientsBtn">Mes patients</button>
+          <button class="btn btn-outline" id="tabPendingBtn">Inscriptions en attente</button>
           <button class="btn btn-outline" id="tabPatientDetailsBtn">Détails patient</button>
         </div>
       </div>
@@ -504,6 +506,15 @@
             <span class="card-title">➕ Patients disponibles</span>
           </div>
           <div class="card-body" id="doctorAvailablePatientsList"></div>
+        </div>
+      </div>
+
+      <div id="doctorPendingTab" class="dashboard-grid" style="display:none;">
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-header">
+            <span class="card-title">🕒 Inscriptions patients en attente</span>
+          </div>
+          <div class="card-body" id="doctorPendingPatientsList"></div>
         </div>
       </div>
 
@@ -528,6 +539,7 @@
     `;
 
     document.getElementById('tabPatientsBtn').addEventListener('click', () => toggleDoctorTab('patients'));
+    document.getElementById('tabPendingBtn').addEventListener('click', () => toggleDoctorTab('pending'));
     document.getElementById('tabPatientDetailsBtn').addEventListener('click', () => toggleDoctorTab('details'));
     document.getElementById('doctorNotifyBtn').addEventListener('click', sendDoctorNotification);
     document.getElementById('doctorCreateAptBtn').addEventListener('click', createDoctorAppointment);
@@ -535,15 +547,23 @@
 
   function toggleDoctorTab(tab) {
     const patientsTab = document.getElementById('doctorPatientsTab');
+    const pendingTab = document.getElementById('doctorPendingTab');
     const detailsTab = document.getElementById('doctorPatientDetailsTab');
     const patientsBtn = document.getElementById('tabPatientsBtn');
+    const pendingBtn = document.getElementById('tabPendingBtn');
     const detailsBtn = document.getElementById('tabPatientDetailsBtn');
 
     const showPatients = tab === 'patients';
+    const showPending = tab === 'pending';
+    const showDetails = tab === 'details';
+
     patientsTab.style.display = showPatients ? 'grid' : 'none';
-    detailsTab.style.display = showPatients ? 'none' : 'grid';
+    pendingTab.style.display = showPending ? 'grid' : 'none';
+    detailsTab.style.display = showDetails ? 'grid' : 'none';
+
     patientsBtn.className = showPatients ? 'btn btn-primary' : 'btn btn-outline';
-    detailsBtn.className = showPatients ? 'btn btn-outline' : 'btn btn-primary';
+    pendingBtn.className = showPending ? 'btn btn-primary' : 'btn btn-outline';
+    detailsBtn.className = showDetails ? 'btn btn-primary' : 'btn btn-outline';
   }
 
   async function loadDoctorDashboard() {
@@ -552,20 +572,23 @@
 
     document.getElementById('welcomeSub').textContent = 'Vue médicale de vos patients';
     const overview = await apiFetch('/doctors/me/overview');
-    const [myPatients, freePatients] = await Promise.all([
+    const [myPatients, freePatients, pendingPatients] = await Promise.all([
       apiFetch('/doctors/me/patients'),
-      apiFetch('/doctors/me/patients/available')
+      apiFetch('/doctors/me/patients/available'),
+      apiFetch('/doctors/me/patient-registrations/pending')
     ]);
     doctorPatients = myPatients;
     availablePatients = freePatients;
+    pendingRegistrations = pendingPatients;
 
     document.getElementById('docStatPatients').textContent = overview.patientCount;
     document.getElementById('docStatApts').textContent = overview.upcomingAppointments;
-    document.getElementById('docStatAlerts').textContent = overview.alertsCount;
+    document.getElementById('docStatAlerts').textContent = pendingRegistrations.length;
     document.getElementById('docStatDocs').textContent = overview.recentDocuments;
 
     renderDoctorPatientsList();
     renderDoctorAvailablePatientsList();
+    renderDoctorPendingRegistrations();
   }
 
   function renderDoctorPatientsList() {
@@ -621,6 +644,56 @@
         }).join('')}
       </div>
     `;
+  }
+
+  function renderDoctorPendingRegistrations() {
+    const container = document.getElementById('doctorPendingPatientsList');
+    if (!pendingRegistrations.length) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><h3>Aucune inscription en attente</h3><p>Les nouvelles demandes patients apparaîtront ici.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="med-list">
+        ${pendingRegistrations.map((p) => {
+          const profile = p.profile || {};
+          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
+          const createdAt = p.createdAt ? formatDate(p.createdAt) : '-';
+          return `
+            <div class="med-card" style="align-items:flex-start;">
+              <div class="med-color" style="background:#FEF3C7; color:#B45309;">🕒</div>
+              <div class="med-info" style="flex:1;">
+                <h4>${fullName}</h4>
+                <p>${p.email}</p>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Demande envoyée le ${createdAt}</p>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="approvePatientRegistration('${p.id}')">Valider</button>
+                <button class="btn btn-outline btn-sm" onclick="rejectPatientRegistration('${p.id}')">Refuser</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  async function approvePatientRegistration(patientId) {
+    await apiFetch(`/doctors/me/patient-registrations/${patientId}/approve`, {
+      method: 'PUT'
+    });
+    showToast('Inscription patient validée.');
+    await loadDoctorDashboard();
+    toggleDoctorTab('pending');
+  }
+
+  async function rejectPatientRegistration(patientId) {
+    await apiFetch(`/doctors/me/patient-registrations/${patientId}/reject`, {
+      method: 'PUT'
+    });
+    showToast('Inscription patient refusée.', 'warning');
+    await loadDoctorDashboard();
+    toggleDoctorTab('pending');
   }
 
   async function assignPatientToMe(patientId) {

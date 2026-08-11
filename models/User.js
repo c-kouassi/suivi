@@ -19,7 +19,24 @@ const User = sequelize.define('User', {
     type: DataTypes.ENUM('patient', 'doctor'),
     defaultValue: 'patient'
   },
+  doctorReferralCode: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true
+  },
   treatingDoctorId: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  registrationStatus: {
+    type: DataTypes.ENUM('approved', 'pending', 'rejected'),
+    defaultValue: 'approved'
+  },
+  approvedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  approvedByDoctorId: {
     type: DataTypes.STRING,
     allowNull: true
   },

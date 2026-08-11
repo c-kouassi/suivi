@@ -1,11 +1,51 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { Op } = require('sequelize');
 const User = require('../models/User');
 const authenticateToken = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
 
 const router = express.Router();
+
+async function generateUniqueDoctorReferralCode() {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const code = `DOC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    const existing = await User.findOne({ where: { doctorReferralCode: code } });
+    if (!existing) {
+      return code;
+    }
+  }
+
+  return `DOC-${uuidv4().replace(/-/g, '').slice(0, 10).toUpperCase()}`;
+}
+
+function normalizeDoctorCode(value) {
+  return String(value || '')
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+async function ensureDoctorReferralCodes() {
+  const doctorsWithoutCode = await User.findAll({
+    where: {
+      role: 'doctor',
+      [Op.or]: [
+        { doctorReferralCode: null },
+        { doctorReferralCode: '' }
+      ]
+    }
+  });
+
+  if (!doctorsWithoutCode.length) {
+    return;
+  }
+
+  for (const doctor of doctorsWithoutCode) {
+    doctor.doctorReferralCode = await generateUniqueDoctorReferralCode();
+    await doctor.save();
+  }
+}
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -27,6 +67,18 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Identifiants incorrects' });
     }
 
+    if (user.role === 'patient' && user.registrationStatus === 'pending') {
+      return res.status(403).json({
+        error: 'Votre inscription est en attente de validation par votre médecin.'
+      });
+    }
+
+    if (user.role === 'patient' && user.registrationStatus === 'rejected') {
+      return res.status(403).json({
+        error: 'Votre inscription a été refusée par votre médecin. Contactez votre médecin pour plus d\'informations.'
+      });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -39,7 +91,10 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         role: user.role,
+        doctorReferralCode: user.doctorReferralCode || null,
         treatingDoctorId: user.treatingDoctorId,
+        registrationStatus: user.registrationStatus,
+        approvedAt: user.approvedAt,
         profile: user.profile || {}
       }
     });
@@ -52,7 +107,7 @@ router.post('/login', async (req, res) => {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName, dateOfBirth, phone, role, speciality, treatingDoctorId } = req.body;
+    const { email, password, firstName, lastName, dateOfBirth, phone, role, speciality, doctorCode } = req.body;
 
     if (!email || !password || !firstName || !lastName) {
       return res.status(400).json({ error: 'Tous les champs obligatoires doivent être remplis' });
@@ -66,13 +121,29 @@ router.post('/register', async (req, res) => {
     const userRole = role === 'doctor' ? 'doctor' : 'patient';
 
     let doctor = null;
-    if (userRole === 'patient' && treatingDoctorId) {
-      doctor = await User.findOne({
-        where: { id: treatingDoctorId, role: 'doctor' }
+    if (userRole === 'patient') {
+      if (!doctorCode) {
+        return res.status(400).json({ error: 'Le code médecin est obligatoire pour créer un compte patient' });
+      }
+
+      await ensureDoctorReferralCodes();
+
+      const normalizedInputCode = normalizeDoctorCode(doctorCode);
+      if (!normalizedInputCode) {
+        return res.status(400).json({ error: 'Code médecin invalide' });
+      }
+
+      const doctors = await User.findAll({
+        where: { role: 'doctor' },
+        attributes: ['id', 'doctorReferralCode', 'profile']
       });
 
+      doctor = doctors.find((candidate) => {
+        return normalizeDoctorCode(candidate.doctorReferralCode) === normalizedInputCode;
+      }) || null;
+
       if (!doctor) {
-        return res.status(400).json({ error: 'Médecin référent introuvable' });
+        return res.status(400).json({ error: 'Code médecin invalide' });
       }
     }
 
@@ -108,9 +179,20 @@ router.post('/register', async (req, res) => {
       email,
       password: hashedPassword,
       role: userRole,
-      treatingDoctorId: userRole === 'patient' ? (treatingDoctorId || null) : null,
+      doctorReferralCode: userRole === 'doctor' ? await generateUniqueDoctorReferralCode() : null,
+      treatingDoctorId: userRole === 'patient' ? doctor.id : null,
+      registrationStatus: userRole === 'patient' ? 'pending' : 'approved',
+      approvedAt: userRole === 'patient' ? null : new Date(),
+      approvedByDoctorId: null,
       profile
     });
+
+    if (userRole === 'patient') {
+      return res.status(201).json({
+        message: 'Inscription envoyée. Votre médecin doit valider votre demande avant activation du compte.',
+        registrationStatus: newUser.registrationStatus
+      });
+    }
 
     const token = jwt.sign(
       { id: newUser.id, email: newUser.email, role: newUser.role },
@@ -124,9 +206,43 @@ router.post('/register', async (req, res) => {
         id: newUser.id,
         email: newUser.email,
         role: newUser.role,
+        doctorReferralCode: newUser.doctorReferralCode || null,
         treatingDoctorId: newUser.treatingDoctorId,
+        registrationStatus: newUser.registrationStatus,
+        approvedAt: newUser.approvedAt,
         profile: newUser.profile || {}
       }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/auth/doctor/referral-code
+router.post('/doctor/referral-code', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'doctor') {
+      return res.status(403).json({ error: 'Accès réservé aux médecins' });
+    }
+
+    const doctor = await User.findOne({
+      where: {
+        id: req.user.id,
+        role: 'doctor'
+      }
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ error: 'Médecin introuvable' });
+    }
+
+    doctor.doctorReferralCode = await generateUniqueDoctorReferralCode();
+    await doctor.save();
+
+    res.json({
+      message: 'Code médecin généré avec succès.',
+      doctorReferralCode: doctor.doctorReferralCode
     });
   } catch (err) {
     console.error(err);
@@ -147,7 +263,10 @@ router.get('/me', authenticateToken, async (req, res) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      doctorReferralCode: user.doctorReferralCode || null,
       treatingDoctorId: user.treatingDoctorId,
+      registrationStatus: user.registrationStatus,
+      approvedAt: user.approvedAt,
       profile: user.profile || {}
     });
   } catch (err) {

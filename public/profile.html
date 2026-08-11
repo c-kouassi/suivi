@@ -209,6 +209,15 @@
           </div>
           <div class="card-body">
             <div style="display:flex; flex-direction:column; gap:12px;">
+              <div id="doctorCodePanel" style="padding:16px; background:var(--surface-2); border-radius:var(--radius-sm); display:none;">
+                <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">Code patient du médecin</h4>
+                <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Générez ou régénérez votre code d'inscription patient depuis ce panneau.</p>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                  <code id="doctorReferralCodeValue" style="padding:8px 10px; background:white; border:1px solid var(--border); border-radius:var(--radius-sm); font-weight:700;">-</code>
+                  <button class="btn btn-secondary btn-sm" id="generateDoctorCodeBtn">🔑 Générer un nouveau code</button>
+                </div>
+              </div>
+
               <div style="padding:16px; background:var(--surface-2); border-radius:var(--radius-sm);">
                 <h4 style="font-size:0.875rem; font-weight:700; margin-bottom:4px;">Données & Confidentialité</h4>
                 <p style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:10px;">Vos données de santé sont chiffrées et sécurisées. Seul vous et votre équipe médicale y avez accès.</p>
@@ -255,6 +264,7 @@
   initSidebar();
 
   let aiDialogBusy = false;
+  let currentUser = getUser();
 
   function escapeHTML(value) {
     return (value || '')
@@ -330,7 +340,7 @@
   }
 
   async function loadProfile() {
-    const user = getUser();
+    const user = currentUser;
     if (!user) return;
 
     if (user.role === 'doctor') {
@@ -374,6 +384,7 @@
 
     const medicalBlock = user.role === 'doctor'
       ? [
+        { label: 'Code médecin', value: user.doctorReferralCode || '-' },
         { label: 'Spécialité', value: p.speciality || '-' },
         { label: 'Email professionnel', value: user.email },
         { label: 'Rôle', value: 'Médecin' },
@@ -388,6 +399,15 @@
 
     document.getElementById('medicalInfo').innerHTML = medicalBlock
       .map(i => `<div class="info-item"><label>${i.label}</label><p>${i.value}</p></div>`).join('');
+
+    if (user.role === 'doctor') {
+      const doctorCodePanel = document.getElementById('doctorCodePanel');
+      const doctorReferralCodeValue = document.getElementById('doctorReferralCodeValue');
+      if (doctorCodePanel && doctorReferralCodeValue) {
+        doctorCodePanel.style.display = 'block';
+        doctorReferralCodeValue.textContent = user.doctorReferralCode || '-';
+      }
+    }
 
     // Load stats
     try {
@@ -423,6 +443,36 @@
   function shareWithDoctor() {
     showToast('Dossier partagé avec Dr. Sophie Martin ✅', 'success');
   }
+
+  async function refreshDoctorReferralCode() {
+    try {
+      const data = await apiFetch('/auth/doctor/referral-code', {
+        method: 'POST'
+      });
+
+      currentUser = {
+        ...currentUser,
+        doctorReferralCode: data.doctorReferralCode
+      };
+      setAuth(getToken(), currentUser);
+
+      const codeValue = document.getElementById('doctorReferralCodeValue');
+      if (codeValue) {
+        codeValue.textContent = data.doctorReferralCode;
+      }
+
+      const medicalCodeLabel = document.querySelector('#medicalInfo .info-item p');
+      if (medicalCodeLabel) {
+        medicalCodeLabel.textContent = data.doctorReferralCode;
+      }
+
+      showToast('Code médecin généré avec succès.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Impossible de générer le code médecin.', 'error');
+    }
+  }
+
+  document.getElementById('generateDoctorCodeBtn')?.addEventListener('click', refreshDoctorReferralCode);
 
   loadProfile();
 </script>
