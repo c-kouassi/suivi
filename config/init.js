@@ -56,8 +56,31 @@ async function initializeDatabase() {
     console.log('📊 Schéma de base de données synchronisé');
 
   } catch (err) {
-    console.error('❌ Erreur lors de l\'initialisation de la BDD:', err.message);
-    console.error('Assurez-vous que MySQL est en cours d\'exécution et que les credentials .env sont corrects');
+    console.error('\n❌ Connexion à la base de données impossible.');
+    console.error('   Erreur :', err.name || 'inconnue', '—', err.message || err.parent?.message || '(aucun message)');
+    if (err.parent?.code) console.error('   Code   :', err.parent.code);
+
+    // Sans ce détail, l'erreur est illisible : Sequelize ne dit rien quand la
+    // configuration est simplement absente (hôte/base/utilisateur undefined).
+    const seen = (name) => (process.env[name] ? 'défini' : '—');
+    console.error('\n   Variables détectées :');
+    console.error('     MYSQL_URL / DATABASE_URL :', seen('MYSQL_URL'), '/', seen('DATABASE_URL'));
+    console.error('     DB_HOST / DB_NAME        :', seen('DB_HOST'), '/', seen('DB_NAME'));
+    console.error('     MYSQLHOST / MYSQLDATABASE:', seen('MYSQLHOST'), '/', seen('MYSQLDATABASE'));
+
+    const aucune = !process.env.MYSQL_URL && !process.env.DATABASE_URL
+      && !process.env.DB_HOST && !process.env.MYSQLHOST;
+    if (aucune) {
+      console.error('\n   → Aucune variable de base de données n\'est présente.');
+      console.error('     En local  : renseignez DB_* dans .env');
+      console.error('     Sur Railway : le service applicatif ne reçoit PAS automatiquement');
+      console.error('     les variables du service MySQL. Ajoutez une référence, par ex. :');
+      console.error('       MYSQL_URL = ${{MySQL.MYSQL_URL}}');
+      console.error('     (remplacez « MySQL » par le nom exact du service base de données)');
+    } else {
+      console.error('\n   → Vérifiez que le service MySQL est démarré et les identifiants corrects.');
+    }
+    console.error('');
     process.exit(1);
   }
 }
