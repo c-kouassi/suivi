@@ -176,6 +176,38 @@ a {
   max-width: 420px;
 }
 
+/**
+ * Grands écrans : en `1fr 1fr` les deux moitiés s'étirent sans limite et le
+ * contenu se retrouve noyé au milieu du vide. On arrête d'étirer le panneau
+ * vert et on laisse le formulaire respirer, sans toucher au plein écran
+ * (le vert continue de border le bord gauche).
+ */
+@media (min-width: 1500px) {
+  .auth-page {
+    grid-template-columns: minmax(0, 42%) minmax(0, 58%);
+  }
+
+  .auth-left {
+    padding: 64px;
+  }
+
+  .auth-left h1,
+  .auth-left p,
+  .auth-features {
+    max-width: 440px;
+  }
+
+  .auth-form-container {
+    max-width: 460px;
+  }
+}
+
+@media (min-width: 2000px) {
+  .auth-page {
+    grid-template-columns: minmax(0, 38%) minmax(0, 62%);
+  }
+}
+
 .auth-form-container h2 {
   font-size: 1.75rem;
   font-weight: 700;

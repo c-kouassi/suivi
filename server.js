@@ -19,7 +19,32 @@ const messageRoutes = require('./routes/messages');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+/**
+ * CORS restreint.
+ *
+ * Le front est servi par ce même serveur : il est donc en same-origin et n'a
+ * besoin d'aucune autorisation. On garde une liste blanche pour l'URL publique
+ * et le développement local.
+ *
+ * Les requêtes sans en-tête `Origin` sont acceptées : c'est le cas du
+ * compagnon iOS (URLSession n'est pas soumis au CORS, qui est un mécanisme de
+ * navigateur) et des appels serveur à serveur. Les bloquer casserait la
+ * synchronisation Apple Health sans rien apporter en sécurité.
+ */
+const allowedOrigins = [
+  process.env.APP_BASE_URL,
+  `http://localhost:${PORT}`,
+  `http://127.0.0.1:${PORT}`
+].filter(Boolean);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`Origine non autorisée : ${origin}`));
+  },
+  credentials: true
+}));
+
 // Les lots Apple Health contiennent de nombreuses mesures et metadonnees.
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
@@ -46,6 +71,10 @@ app.use((err, req, res, next) => {
     return res.status(413).json({
       error: 'Lot de données trop volumineux. Réduisez le nombre de mesures envoyées.'
     });
+  }
+  // Origine refusée par la liste blanche CORS : 403 explicite plutôt qu'un 500.
+  if (err.message && err.message.startsWith('Origine non autorisée')) {
+    return res.status(403).json({ error: err.message });
   }
   return next(err);
 });
