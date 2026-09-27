@@ -37,12 +37,20 @@ const allowedOrigins = [
   `http://127.0.0.1:${PORT}`
 ].filter(Boolean);
 
-app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`Origine non autorisée : ${origin}`));
-  },
-  credentials: true
+app.use(cors((req, callback) => {
+  const origin = req.headers.origin;
+  const host = req.get('host');
+
+  // Le front est servi par ce serveur : on autorise toujours sa propre origine,
+  // déduite de l'en-tête Host. Sans cela, un APP_BASE_URL absent ou mal
+  // orthographié ferait échouer en 403 tous les appels du navigateur — les
+  // requêtes same-origin portent elles aussi un en-tête Origin.
+  const isSelf = origin === `https://${host}` || origin === `http://${host}`;
+
+  if (!origin || isSelf || allowedOrigins.includes(origin)) {
+    return callback(null, { origin: true, credentials: true });
+  }
+  callback(new Error(`Origine non autorisée : ${origin}`));
 }));
 
 // Les lots Apple Health contiennent de nombreuses mesures et metadonnees.
