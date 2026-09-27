@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SuiviPatient - Médicaments</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     .schedule-grid { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; margin-top: 8px; }
     .schedule-hour { height: 24px; border-radius: 4px; background: var(--surface-3); position: relative; }
@@ -19,12 +19,13 @@
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-icon">🏥</div>
-      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Suivi thyroïdien</span></div>
     </div>
     <nav class="sidebar-nav">
       <span class="nav-section-label">Principal</span>
       <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
       <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
       <span class="nav-section-label">Santé</span>
       <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
       <div class="nav-link active" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
@@ -45,8 +46,8 @@
   <div class="main-content">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>💊 Médicaments</h1>
-        <p>Gestion de votre traitement post-opératoire</p>
+        <h1><span data-icon="pill" data-icon-size="22"></span>Médicaments</h1>
+        <p>Votre traitement thyroïdien au quotidien</p>
       </div>
       <div class="topbar-right">
         <button class="btn btn-primary" onclick="openModal('medModal')">➕ Ajouter un médicament</button>
@@ -81,6 +82,54 @@
           <div class="empty-state">
             <div class="empty-state-icon">💊</div>
             <h3>Chargement...</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bien prendre son traitement thyroïdien -->
+      <div class="card mt-6">
+        <div class="card-header">
+          <span class="card-title"><span data-icon="check" data-icon-size="16"></span>Bien prendre son traitement thyroïdien</span>
+        </div>
+        <div class="card-body">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px;">
+
+            <div>
+              <h4 style="font-size:0.88rem; font-weight:700; margin-bottom:6px;">Lévothyroxine (Levothyrox, L-Thyroxine, Euthyrox)</h4>
+              <ul style="font-size:0.83rem; color:var(--text-secondary); line-height:1.65; padding-left:16px;">
+                <li><strong>À jeun</strong>, le matin, avec un grand verre d'eau</li>
+                <li>Attendre <strong>30 minutes</strong> avant le petit-déjeuner et le café</li>
+                <li>Toujours <strong>à la même heure</strong> — la régularité compte plus que l'heure exacte</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 style="font-size:0.88rem; font-weight:700; margin-bottom:6px;">À distance de…</h4>
+              <ul style="font-size:0.83rem; color:var(--text-secondary); line-height:1.65; padding-left:16px;">
+                <li><strong>4 heures</strong> : calcium, fer, magnésium, pansements gastriques</li>
+                <li>Café, soja et compléments alimentaires réduisent l'absorption</li>
+                <li>Signalez tout <strong>changement de marque ou de forme</strong> : l'équilibre peut bouger</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 style="font-size:0.88rem; font-weight:700; margin-bottom:6px;">En cas d'oubli</h4>
+              <ul style="font-size:0.83rem; color:var(--text-secondary); line-height:1.65; padding-left:16px;">
+                <li>Vous vous en apercevez dans la matinée : prenez-le à jeun</li>
+                <li>Plus tard : reprenez normalement le lendemain, <strong>sans doubler la dose</strong></li>
+                <li>Oublis répétés : parlez-en à votre médecin</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 style="font-size:0.88rem; font-weight:700; margin-bottom:6px; color:var(--danger);">Points de vigilance</h4>
+              <ul style="font-size:0.83rem; color:var(--text-secondary); line-height:1.65; padding-left:16px;">
+                <li><strong>Ne modifiez jamais la dose seul.</strong> L'ajustement se fait sur la TSH, 6 à 8 semaines après un changement.</li>
+                <li>Sous <strong>antithyroïdien</strong> (Néo-Mercazole, Propylex) : fièvre, angine ou aphtes → consultation en urgence avec une prise de sang.</li>
+                <li>Grossesse ou projet de grossesse : prévenez votre médecin, les besoins augmentent.</li>
+              </ul>
+            </div>
+
           </div>
         </div>
       </div>

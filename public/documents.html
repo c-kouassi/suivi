@@ -5,19 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SuiviPatient - Documents</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="app-layout">
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-icon">🏥</div>
-      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Suivi thyroïdien</span></div>
     </div>
     <nav class="sidebar-nav">
       <span class="nav-section-label">Principal</span>
       <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
       <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
       <span class="nav-section-label">Santé</span>
       <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
       <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
@@ -38,8 +39,8 @@
   <div class="main-content">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>📁 Documents médicaux</h1>
-        <p>Votre dossier de sortie et documents de suivi</p>
+        <h1><span data-icon="folder" data-icon-size="22"></span>Documents médicaux</h1>
+        <p>Déposez vos documents, téléchargez-les, partagez-les avec votre médecin</p>
       </div>
       <div class="topbar-right">
         <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
@@ -48,43 +49,68 @@
 
     <div class="page-content">
 
-      <!-- Info banner -->
-      <div class="alert alert-info mb-6">
-        ℹ️ Ces documents sont fournis par votre équipe médicale. Pour toute question, consultez votre médecin traitant.
+      <!-- Upload -->
+      <div class="card mb-6">
+        <div class="card-header">
+          <span class="card-title"><span data-icon="upload" data-icon-size="17"></span>Déposer un document</span>
+        </div>
+        <div class="card-body">
+          <form id="uploadForm">
+            <div class="form-row" style="display:flex; gap:16px; flex-wrap:wrap;">
+              <div class="form-group" style="flex:2; min-width:220px;">
+                <label>Fichier <span style="color:var(--text-muted); font-weight:400;">(PDF, image, Word, texte — 10 Mo max)</span></label>
+                <input type="file" id="fileInput" name="file" required
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.txt,.doc,.docx"
+                  class="form-control">
+              </div>
+              <div class="form-group" style="flex:1; min-width:160px;">
+                <label>Nom affiché</label>
+                <input type="text" id="nameInput" class="form-control" placeholder="Compte rendu opératoire…">
+              </div>
+              <div class="form-group" style="flex:1; min-width:140px;">
+                <label>Type</label>
+                <select id="typeInput" class="form-control">
+                  <option value="other">Autre</option>
+                  <option value="surgery">Chirurgie</option>
+                  <option value="prescription">Ordonnance</option>
+                  <option value="exam">Examen</option>
+                  <option value="report">Compte rendu</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description (optionnel)</label>
+              <textarea id="descInput" class="form-control" rows="2" placeholder="Précisions pour votre médecin…"></textarea>
+            </div>
+            <div class="form-group">
+              <label style="display:flex; align-items:center; gap:8px; font-weight:400;">
+                <input type="checkbox" id="shareInput" checked>
+                Partager avec mon médecin traitant
+              </label>
+            </div>
+            <div id="uploadAlert" class="alert hidden mb-4"></div>
+            <button type="submit" class="btn btn-primary" id="uploadBtn">Déposer le document</button>
+          </form>
+        </div>
       </div>
 
-      <!-- Catégories -->
-      <div style="display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap;" id="filterBtns">
+      <!-- Filtres -->
+      <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;" id="filterBtns">
         <button class="btn btn-primary btn-sm" data-filter="all" onclick="filterDocs('all', this)">Tous</button>
-        <button class="btn btn-outline btn-sm" data-filter="Chirurgie" onclick="filterDocs('Chirurgie', this)">🔪 Chirurgie</button>
-        <button class="btn btn-outline btn-sm" data-filter="Ordonnance" onclick="filterDocs('Ordonnance', this)">💊 Ordonnances</button>
-        <button class="btn btn-outline btn-sm" data-filter="Examen" onclick="filterDocs('Examen', this)">🔬 Examens</button>
+        <button class="btn btn-outline btn-sm" data-filter="surgery" onclick="filterDocs('surgery', this)">Chirurgie</button>
+        <button class="btn btn-outline btn-sm" data-filter="prescription" onclick="filterDocs('prescription', this)">Ordonnances</button>
+        <button class="btn btn-outline btn-sm" data-filter="exam" onclick="filterDocs('exam', this)">Examens</button>
+        <button class="btn btn-outline btn-sm" data-filter="report" onclick="filterDocs('report', this)">Comptes rendus</button>
+        <button class="btn btn-outline btn-sm" data-filter="other" onclick="filterDocs('other', this)">Autres</button>
       </div>
 
-      <!-- Documents Grid -->
       <div class="doc-grid" id="docGrid">
         <div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-state-icon">📁</div>
+          <div class="empty-state-icon" data-icon="folder" data-icon-size="34"></div>
           <h3>Chargement...</h3>
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
-
-<!-- Modal Document -->
-<div class="modal-overlay" id="docModal">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 id="docModalTitle">Document médical</h3>
-      <button class="modal-close" onclick="closeModal('docModal')">✕</button>
-    </div>
-    <div class="modal-body" id="docModalBody">
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('docModal')">Fermer</button>
-      <button class="btn btn-outline">📥 Demander le PDF</button>
     </div>
   </div>
 </div>
@@ -95,80 +121,174 @@
   initSidebar();
 
   let allDocs = [];
+  let currentFilter = 'all';
 
-  const docIcons = {
-    'Chirurgie': '🔪',
-    'Ordonnance': '💊',
-    'Examen': '🔬',
-    'Compte rendu': '📝',
-    'Résultats': '📊'
+  const docIcons = { surgery: 'activity', prescription: 'pill', exam: 'clipboard', report: 'file', other: 'file' };
+  const docLabels = {
+    surgery: 'Chirurgie',
+    prescription: 'Ordonnance',
+    exam: 'Examen',
+    report: 'Compte rendu',
+    other: 'Autre'
   };
 
+  // getToken(), apiFetch(), showToast(), formatDate() proviennent de /js/app.js
+
+  function formatSize(bytes) {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' Ko';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' Mo';
+  }
+
+  function showUploadAlert(message, type) {
+    const el = document.getElementById('uploadAlert');
+    el.textContent = message;
+    el.className = `alert alert-${type === 'error' ? 'danger' : 'success'} mb-4`;
+    el.classList.remove('hidden');
+  }
+
   function filterDocs(filter, btn) {
-    document.querySelectorAll('#filterBtns button').forEach(b => {
-      b.className = 'btn btn-outline btn-sm';
-    });
+    currentFilter = filter;
+    document.querySelectorAll('#filterBtns button').forEach(b => { b.className = 'btn btn-outline btn-sm'; });
     btn.className = 'btn btn-primary btn-sm';
-
-    const filtered = filter === 'all' ? allDocs : allDocs.filter(d => d.type === filter);
-    renderDocs(filtered);
+    renderDocs();
   }
 
-  function openDoc(doc) {
-    document.getElementById('docModalTitle').textContent = `${docIcons[doc.type] || '📄'} ${doc.name}`;
-    document.getElementById('docModalBody').innerHTML = `
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div style="background:var(--surface-2); padding:20px; border-radius:var(--radius); text-align:center;">
-          <div style="font-size:56px; margin-bottom:8px;">${docIcons[doc.type] || '📄'}</div>
-          <h3 style="font-size:1rem; font-weight:700;">${doc.name}</h3>
-        </div>
-        <div class="info-grid">
-          <div class="info-item"><label>Type</label><p>${doc.type}</p></div>
-          <div class="info-item"><label>Date</label><p>${formatDate(doc.date)}</p></div>
-          <div class="info-item"><label>Médecin</label><p>${doc.doctor}</p></div>
-        </div>
-        ${doc.description ? `
-          <div class="info-item" style="grid-column:1/-1;">
-            <label>Description</label>
-            <p>${doc.description}</p>
-          </div>
-        ` : ''}
-        <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:var(--radius-sm); padding:14px; font-size:0.82rem; color:var(--info);">
-          ℹ️ Le document complet est disponible auprès de votre équipe médicale ou via votre espace Mon Espace Santé.
-        </div>
-      </div>
-    `;
-    openModal('docModal');
+  async function downloadDoc(id, inline) {
+    try {
+      const res = await fetch(`/api/documents/${id}/download${inline ? '?inline=1' : ''}`, {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      });
+      if (!res.ok) throw new Error('Téléchargement impossible');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      if (inline) {
+        window.open(url, '_blank');
+      } else {
+        const cd = res.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="?([^"]+)"?/);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = match ? decodeURIComponent(match[1]) : 'document';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      showToast('Téléchargement impossible', 'error');
+    }
   }
 
-  function renderDocs(docs) {
+  async function toggleShare(id, share) {
+    try {
+      await apiFetch(`/documents/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ visibility: share ? 'shared' : 'private' })
+      });
+      showToast(share ? 'Document partagé avec votre médecin' : 'Document rendu privé');
+      await loadDocuments();
+    } catch (err) {
+      showToast('Action impossible', 'error');
+    }
+  }
+
+  async function deleteDoc(id) {
+    if (!confirm('Supprimer définitivement ce document ?')) return;
+    try {
+      await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+      showToast('Document supprimé');
+      await loadDocuments();
+    } catch (err) {
+      showToast('Suppression impossible', 'error');
+    }
+  }
+
+  function renderDocs() {
     const el = document.getElementById('docGrid');
-    if (docs.length === 0) {
+    const docs = currentFilter === 'all' ? allDocs : allDocs.filter(d => d.type === currentFilter);
+
+    if (!docs.length) {
       el.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-        <div class="empty-state-icon">📁</div>
-        <h3>Aucun document dans cette catégorie</h3>
+        <div class="empty-state-icon" data-icon="folder" data-icon-size="34"></div>
+        <h3>${allDocs.length ? 'Aucun document dans cette catégorie' : 'Aucun document pour le moment'}</h3>
+        <p>${allDocs.length ? '' : 'Déposez votre premier document ci-dessus.'}</p>
       </div>`;
       return;
     }
-    el.innerHTML = docs.map(d => `
-      <div class="doc-card" onclick='openDoc(${JSON.stringify(d)})'>
-        <div class="doc-icon">${docIcons[d.type] || '📄'}</div>
-        <h4>${d.name}</h4>
-        <div class="doc-meta">${d.doctor}</div>
-        <div class="doc-meta">${formatDate(d.date)}</div>
-        <span class="doc-type-badge">${d.type}</span>
-      </div>
-    `).join('');
+
+    el.innerHTML = docs.map(d => {
+      const shared = d.visibility === 'shared';
+      const fromDoctor = d.uploadedByRole === 'doctor';
+      return `
+      <div class="doc-card" style="cursor:default; text-align:left; align-items:stretch;">
+        <div class="doc-icon" data-icon="${docIcons[d.type] || 'file'}" data-icon-size="22"></div>
+        <h4 title="${d.name}">${d.name}</h4>
+        <div class="doc-meta">${docLabels[d.type] || 'Autre'} · ${formatSize(d.size)}</div>
+        <div class="doc-meta">${formatDate(d.uploadDate || d.createdAt)}</div>
+        ${d.description ? `<div class="doc-meta" style="white-space:normal; margin-top:4px;">${d.description}</div>` : ''}
+        ${fromDoctor
+          ? `<span class="doc-type-badge" style="background:rgba(59,130,246,0.12); color:var(--info);">📨 Envoyé par votre médecin</span>`
+          : `<span class="doc-type-badge" style="background:${shared ? 'rgba(34,197,94,0.12)' : 'rgba(245,158,11,0.14)'}; color:${shared ? 'var(--success)' : 'var(--warning)'};">
+              ${shared ? '👨‍⚕️ Partagé avec votre médecin' : '🔒 Privé — votre médecin ne le voit pas'}
+            </span>`}
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:12px;">
+          <button class="btn btn-primary btn-sm" onclick="downloadDoc('${d.id}', false)"><span data-icon="download" data-icon-size="15"></span>Télécharger</button>
+          <button class="btn btn-outline btn-sm" onclick="downloadDoc('${d.id}', true)"><span data-icon="eye" data-icon-size="15"></span>Ouvrir</button>
+          ${fromDoctor ? '' : `<button class="btn ${shared ? 'btn-ghost' : 'btn-outline'} btn-sm" onclick="toggleShare('${d.id}', ${shared ? 'false' : 'true'})">${shared ? 'Rendre privé' : '👨‍⚕️ Partager au médecin'}</button>`}
+          ${fromDoctor ? '' : `<button class="btn btn-ghost btn-sm" style="color:var(--danger);" onclick="deleteDoc('${d.id}')" aria-label="Supprimer"><span data-icon="trash" data-icon-size="15"></span></button>`}
+        </div>
+      </div>`;
+    }).join('');
   }
 
   async function loadDocuments() {
     try {
-      allDocs = await apiFetch('/patients');
-      renderDocs(allDocs);
+      allDocs = await apiFetch('/documents');
+      renderDocs();
     } catch (err) {
       console.error(err);
+      document.getElementById('docGrid').innerHTML =
+        `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">⚠️</div><h3>Impossible de charger les documents</h3></div>`;
     }
   }
+
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return;
+
+    const btn = document.getElementById('uploadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Envoi…';
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('name', document.getElementById('nameInput').value.trim());
+    fd.append('type', document.getElementById('typeInput').value);
+    fd.append('description', document.getElementById('descInput').value.trim());
+    fd.append('visibility', document.getElementById('shareInput').checked ? 'shared' : 'private');
+
+    try {
+      const res = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+        body: fd
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Envoi impossible');
+
+      showUploadAlert('Document déposé avec succès.', 'success');
+      document.getElementById('uploadForm').reset();
+      await loadDocuments();
+    } catch (err) {
+      showUploadAlert(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Déposer le document';
+    }
+  });
 
   loadDocuments();
 </script>

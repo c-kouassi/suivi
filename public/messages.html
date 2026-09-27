@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuiviPatient - Messagerie</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .msg-layout { display:flex; height: calc(100vh - var(--topbar-height)); }
+    .thread-list { width: 300px; border-right:1px solid var(--border); overflow-y:auto; flex-shrink:0; background:var(--surface); }
+    .thread-item { padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; display:flex; flex-direction:column; gap:4px; }
+    .thread-item:hover { background:var(--surface-2); }
+    .thread-item.active { background:var(--surface-3); border-left:3px solid var(--primary); }
+    .thread-item h4 { font-size:0.9rem; font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .thread-item p { font-size:0.78rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .thread-unread { background:var(--primary); color:#fff; border-radius:999px; font-size:0.7rem; padding:1px 7px; font-weight:700; }
+    .conv { flex:1; display:flex; flex-direction:column; min-width:0; }
+    .conv-header { padding:14px 20px; border-bottom:1px solid var(--border); background:var(--surface); font-weight:700; }
+    .conv-body { flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:10px; background:var(--surface-2); }
+    .bubble { max-width:72%; padding:10px 14px; border-radius:14px; font-size:0.9rem; line-height:1.45; white-space:pre-wrap; word-wrap:break-word; }
+    .bubble.mine { align-self:flex-end; background:var(--primary); color:#fff; border-bottom-right-radius:4px; }
+    .bubble.theirs { align-self:flex-start; background:var(--surface); border:1px solid var(--border); border-bottom-left-radius:4px; }
+    .bubble .meta { display:block; font-size:0.68rem; opacity:0.7; margin-top:4px; }
+    .conv-input { display:flex; gap:10px; padding:14px 16px; border-top:1px solid var(--border); background:var(--surface); }
+    .conv-input textarea { flex:1; resize:none; border:1px solid var(--border); border-radius:12px; padding:10px 14px; font-family:inherit; font-size:0.9rem; max-height:120px; }
+    .conv-empty { flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-muted); background:var(--surface-2); text-align:center; padding:24px; }
+
+    /* Recherche de patient */
+    .thread-search { padding:10px 12px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--surface); z-index:2; }
+    .thread-search input { width:100%; border:1px solid var(--border); border-radius:8px; padding:7px 10px; font-size:0.8rem; font-family:inherit; outline:none; }
+    .thread-search input:focus { border-color:var(--primary); }
+
+    /* Avatars / lignes de fil */
+    .thread-avatar, .conv-avatar {
+      width:28px; height:28px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark);
+      font-size:0.68rem; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .conv-avatar { width:34px; height:34px; font-size:0.78rem; }
+    .thread-item h4 { gap:8px; }
+    .thread-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .thread-item time { font-size:0.68rem; color:var(--text-muted); }
+
+    /* En-tête de conversation */
+    .conv-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .conv-peer { display:flex; align-items:center; gap:10px; min-width:0; }
+    .conv-peer strong { display:block; font-size:0.9rem; }
+    .conv-peer em { font-style:normal; font-weight:500; font-size:0.72rem; color:var(--text-muted); }
+
+    /* Séparateur de jour */
+    .day-sep { display:flex; align-items:center; gap:10px; margin:6px 0; color:var(--text-muted); font-size:0.7rem; font-weight:600; }
+    .day-sep::before, .day-sep::after { content:''; flex:1; height:1px; background:var(--border); }
+
+    @media (max-width:780px){ .thread-list{ width:150px; } }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🏥</div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Suivi thyroïdien</span></div>
+    </div>
+    <nav class="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <div class="patient-card" onclick="window.location.href='/profile'">
+        <div class="avatar" id="sidebarAvatar">JD</div>
+        <div class="patient-info"><h4 id="sidebarName">Chargement...</h4><span id="sidebarRole">Patient</span></div>
+      </div>
+      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1><span data-icon="messages" data-icon-size="22"></span>Messagerie</h1>
+        <p id="msgSubtitle">Échangez avec votre médecin traitant</p>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
+      </div>
+    </div>
+
+    <div class="msg-layout">
+      <div class="thread-list" id="threadList" hidden></div>
+      <div class="conv" id="conv">
+        <div class="conv-empty" id="convEmpty">Chargement…</div>
+        <div id="convContent" hidden style="display:flex; flex-direction:column; flex:1; min-width:0;">
+          <div class="conv-header" id="convHeader">Conversation</div>
+          <div class="conv-body" id="convBody"></div>
+          <form class="conv-input" id="convForm">
+            <textarea id="convInput" rows="1" placeholder="Écrire un message…" maxlength="4000"></textarea>
+            <button type="submit" class="btn btn-primary" id="convSend">Envoyer</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+  requireAuth();
+
+  const user = getUser();
+  const isDoctor = user && user.role === 'doctor';
+  let activePatientId = null;
+  let pollTimer = null;
+
+  // Sidebar selon le rôle
+  (function buildSidebar() {
+    const nav = document.querySelector('.sidebar-nav');
+    if (isDoctor) {
+      nav.innerHTML = `
+        <span class="nav-section-label">Médecin</span>
+        <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
+        <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+        <div class="nav-link active" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
+        <span class="nav-section-label">Dossier</span>
+        <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>`;
+      document.getElementById('msgSubtitle').textContent = 'Échangez avec vos patients';
+    } else {
+      nav.innerHTML = `
+        <span class="nav-section-label">Principal</span>
+        <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
+        <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+        <div class="nav-link active" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
+        <span class="nav-section-label">Santé</span>
+        <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
+        <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
+        <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
+        <span class="nav-section-label">Dossier médical</span>
+        <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
+        <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>`;
+    }
+    initSidebar();
+  })();
+
+  const convBody = document.getElementById('convBody');
+  const convInput = document.getElementById('convInput');
+
+  convInput.addEventListener('input', () => {
+    convInput.style.height = 'auto';
+    convInput.style.height = Math.min(convInput.scrollHeight, 120) + 'px';
+  });
+  convInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); document.getElementById('convForm').requestSubmit(); }
+  });
+
+  function fmt(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const sameDay = d.toDateString() === today.toDateString();
+    return sameDay
+      ? d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function initials(name) {
+    return (name || '?').split(/\s+/).filter(Boolean).slice(0, 2)
+      .map((w) => w[0].toUpperCase()).join('');
+  }
+
+  function dayLabel(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    const yest = new Date(); yest.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
+    if (d.toDateString() === yest.toDateString()) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  let lastSignature = '';
+
+  function renderMessages(data) {
+    const other = isDoctor ? data.patientName : data.doctorName;
+
+    // En-tête : interlocuteur + raccourci vers le dossier (côté médecin)
+    document.getElementById('convHeader').innerHTML = `
+      <span class="conv-peer">
+        <span class="conv-avatar">${escapeHtml(initials(other))}</span>
+        <span>
+          <strong>${escapeHtml(other)}</strong>
+          <em>${isDoctor ? 'Patient' : 'Médecin traitant'}</em>
+        </span>
+      </span>
+      ${isDoctor ? `<a class="btn btn-outline btn-sm" href="/dashboard">Voir le dossier</a>` : ''}`;
+
+    // Ne rien redessiner si rien n'a changé (le polling ne doit pas
+    // faire clignoter la conversation ni casser le défilement).
+    const sig = data.messages.map((m) => m.id + (m.readAt ? '1' : '0')).join(',');
+    if (sig === lastSignature) return;
+    const stick = convBody.scrollHeight - convBody.scrollTop - convBody.clientHeight < 80;
+    lastSignature = sig;
+
+    if (!data.messages.length) {
+      convBody.innerHTML = `<div style="margin:auto; text-align:center; color:var(--text-muted); font-size:0.86rem;">
+        <p style="margin-bottom:4px;">Aucun message pour le moment.</p>
+        <p>${isDoctor ? 'Écrivez à votre patient pour démarrer le suivi.' : 'Posez votre question à votre médecin traitant.'}</p>
+      </div>`;
+      return;
+    }
+
+    let html = '';
+    let currentDay = '';
+    data.messages.forEach((m, i) => {
+      const day = new Date(m.createdAt).toDateString();
+      if (day !== currentDay) {
+        currentDay = day;
+        html += `<div class="day-sep"><span>${dayLabel(m.createdAt)}</span></div>`;
+      }
+      const isLastMine = m.mine && !data.messages.slice(i + 1).some((x) => x.mine);
+      html += `<div class="bubble ${m.mine ? 'mine' : 'theirs'}">
+          ${escapeHtml(m.body)}
+          <span class="meta">${fmt(m.createdAt)}${m.mine && isLastMine ? (m.readAt ? ' · Vu' : ' · Envoyé') : ''}</span>
+        </div>`;
+    });
+    convBody.innerHTML = html;
+
+    if (stick) convBody.scrollTop = convBody.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function loadConversation() {
+    const qs = isDoctor ? (activePatientId ? `?patientId=${encodeURIComponent(activePatientId)}` : null) : '';
+    if (qs === null) return;
+    try {
+      const data = await apiFetch('/messages' + qs);
+      document.getElementById('convEmpty').hidden = true;
+      document.getElementById('convContent').hidden = false;
+      renderMessages(data);
+      if (isDoctor) loadThreads();
+    } catch (err) {
+      document.getElementById('convEmpty').hidden = false;
+      document.getElementById('convContent').hidden = true;
+      document.getElementById('convEmpty').textContent = err.message || 'Impossible de charger la conversation.';
+    }
+  }
+
+  let threadsCache = [];
+  let threadQuery = '';
+
+  function renderThreads() {
+    const list = document.getElementById('threadList');
+    const q = threadQuery.trim().toLowerCase();
+    const filtered = q
+      ? threadsCache.filter((t) => t.patientName.toLowerCase().includes(q))
+      : threadsCache;
+
+    const search = `<div class="thread-search">
+        <input type="search" id="threadSearch" placeholder="Rechercher un patient…"
+               value="${threadQuery.replace(/"/g, '&quot;')}" autocomplete="off">
+      </div>`;
+
+    const rows = filtered.length
+      ? filtered.map((t) => `
+        <div class="thread-item ${t.patientId === activePatientId ? 'active' : ''}" onclick="selectThread('${t.patientId}')">
+          <h4><span class="thread-avatar">${escapeHtml(initials(t.patientName))}</span>
+            <span class="thread-name">${escapeHtml(t.patientName)}</span>
+            ${t.unread ? `<span class="thread-unread">${t.unread}</span>` : ''}</h4>
+          <p>${t.lastMessage ? (t.lastMine ? 'Vous : ' : '') + escapeHtml(t.lastMessage) : 'Pas encore de message'}</p>
+          ${t.lastAt ? `<time>${fmt(t.lastAt)}</time>` : ''}
+        </div>`).join('')
+      : `<div style="padding:16px; font-size:0.8rem; color:var(--text-muted);">${
+          threadsCache.length ? 'Aucun patient pour cette recherche.' : 'Aucun patient rattaché.'
+        }</div>`;
+
+    list.innerHTML = search + rows;
+
+    const input = document.getElementById('threadSearch');
+    if (input) {
+      input.addEventListener('input', (e) => {
+        threadQuery = e.target.value;
+        renderThreads();
+        const again = document.getElementById('threadSearch');
+        if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+      });
+    }
+  }
+
+  async function loadThreads() {
+    try {
+      threadsCache = await apiFetch('/messages/threads');
+      const list = document.getElementById('threadList');
+      list.hidden = false;
+      renderThreads();
+      if (!activePatientId && threadsCache.length) selectThread(threadsCache[0].patientId);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function selectThread(patientId) {
+    activePatientId = patientId;
+    document.getElementById('convEmpty').hidden = true;
+    loadConversation();
+  }
+  window.selectThread = selectThread;
+
+  document.getElementById('convForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const content = convInput.value.trim();
+    if (!content) return;
+    if (isDoctor && !activePatientId) return;
+    document.getElementById('convSend').disabled = true;
+    try {
+      const body = { content };
+      if (isDoctor) body.patientId = activePatientId;
+      await apiFetch('/messages', { method: 'POST', body: JSON.stringify(body) });
+      convInput.value = '';
+      convInput.style.height = 'auto';
+      await loadConversation();
+    } catch (err) {
+      showToast(err.message || 'Envoi impossible', 'error');
+    } finally {
+      document.getElementById('convSend').disabled = false;
+      convInput.focus();
+    }
+  });
+
+  async function init() {
+    if (isDoctor) {
+      const preselect = new URLSearchParams(location.search).get('patientId');
+      if (preselect) activePatientId = preselect;
+      await loadThreads();
+    } else {
+      await loadConversation();
+    }
+    clearInterval(pollTimer);
+    pollTimer = setInterval(() => {
+      if (document.hidden) return;
+      loadConversation();
+    }, 10000);
+  }
+
+  init();
+</script>
+</body>
+</html>

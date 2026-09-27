@@ -5,6 +5,7 @@ const { Op } = require('sequelize');
 const User = require('../models/User');
 const authenticateToken = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { sendAccountConfirmationEmail } = require('../utils/email');
 
 const router = express.Router();
 
@@ -65,6 +66,12 @@ router.post('/login', async (req, res) => {
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return res.status(401).json({ error: 'Identifiants incorrects' });
+    }
+
+    if (!user.isEmailVerified) {
+      return res.status(403).json({
+        error: 'Merci de confirmer votre adresse e-mail avant de vous connecter.'
+      });
     }
 
     if (user.role === 'patient' && user.registrationStatus === 'pending') {
@@ -174,6 +181,7 @@ router.post('/register', async (req, res) => {
         hospitalStay: null
       };
 
+    const confirmationToken = uuidv4();
     const newUser = await User.create({
       id: `${userRole}-${uuidv4()}`,
       email,
@@ -184,13 +192,27 @@ router.post('/register', async (req, res) => {
       registrationStatus: userRole === 'patient' ? 'pending' : 'approved',
       approvedAt: userRole === 'patient' ? null : new Date(),
       approvedByDoctorId: null,
+      isEmailVerified: false,
+      emailVerificationToken: confirmationToken,
       profile
+    });
+
+    const confirmationUrl = `${process.env.APP_BASE_URL || 'http://localhost:3000'}/api/auth/confirm/${confirmationToken}`;
+    const mailResult = await sendAccountConfirmationEmail({
+      firstName: firstName,
+      lastName: lastName,
+      email,
+      confirmationUrl
     });
 
     if (userRole === 'patient') {
       return res.status(201).json({
-        message: 'Inscription envoyée. Votre médecin doit valider votre demande avant activation du compte.',
-        registrationStatus: newUser.registrationStatus
+        message: mailResult.success
+          ? 'Compte créé avec succès. Un e-mail de confirmation a été envoyé.'
+          : 'Compte créé avec succès. L’e-mail de confirmation n’a pas pu être envoyé, mais le compte est enregistré. Vous pouvez demander un nouveau mail plus tard.',
+        registrationStatus: newUser.registrationStatus,
+        emailVerificationRequired: true,
+        emailSent: mailResult.success
       });
     }
 
@@ -201,6 +223,9 @@ router.post('/register', async (req, res) => {
     );
 
     res.status(201).json({
+      message: mailResult.success
+        ? 'Compte créé avec succès. Un e-mail de confirmation a été envoyé.'
+        : 'Compte créé avec succès. L’e-mail de confirmation n’a pas pu être envoyé, mais le compte est enregistré.',
       token,
       user: {
         id: newUser.id,
@@ -210,8 +235,38 @@ router.post('/register', async (req, res) => {
         treatingDoctorId: newUser.treatingDoctorId,
         registrationStatus: newUser.registrationStatus,
         approvedAt: newUser.approvedAt,
+        isEmailVerified: newUser.isEmailVerified,
         profile: newUser.profile || {}
       }
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// GET /api/auth/confirm/:token
+router.get('/confirm/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token de confirmation manquant' });
+    }
+
+    const user = await User.findOne({ where: { emailVerificationToken: token } });
+    if (!user) {
+      return res.status(400).json({ error: 'Lien de confirmation invalide ou expiré' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerifiedAt = new Date();
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Votre compte a bien été confirmé. Vous pouvez maintenant vous connecter.',
+      email: user.email
     });
   } catch (err) {
     console.error(err);

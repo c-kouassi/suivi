@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SuiviPatient - Assistant IA</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     .chat-container { display: flex; flex-direction: column; height: calc(100vh - var(--topbar-height)); }
     .chat-header-info {
@@ -43,12 +43,13 @@
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-icon">🏥</div>
-      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Suivi thyroïdien</span></div>
     </div>
     <nav class="sidebar-nav">
       <span class="nav-section-label">Principal</span>
       <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
       <div class="nav-link active" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
       <span class="nav-section-label">Santé</span>
       <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
       <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
@@ -70,11 +71,11 @@
   <div class="main-content">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>🤖 Assistant IA</h1>
-        <p>Votre accompagnateur post-hospitalisation</p>
+        <h1><span data-icon="bot" data-icon-size="22"></span>Assistant IA</h1>
+        <p>Vos questions sur la thyroïde et votre traitement</p>
       </div>
       <div class="topbar-right">
-        <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" title="Effacer l'historique">🗑️ Effacer</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearChatHistory()" title="Effacer l'historique"><span data-icon="trash" data-icon-size="15"></span>Effacer</button>
         <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
       </div>
     </div>
@@ -104,12 +105,12 @@
       <!-- Input Area -->
       <div class="chat-input-area">
         <div class="chat-suggestions" id="suggestions">
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">Mes médicaments</span>
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">Gestion de la douleur</span>
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">Alimentation recommandée</span>
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">Reprise du sport</span>
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">Soins de cicatrice</span>
-          <span class="chat-suggestion" onclick="sendSuggestion(this)">J'ai de l'anxiété</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Comment prendre mon Levothyrox ?</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Quels sont mes médicaments ?</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Que veut dire ma TSH ?</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Je suis fatigué en permanence</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">J'ai des palpitations</span>
+          <span class="chat-suggestion" onclick="sendSuggestion(this)">Alimentation et thyroïde</span>
         </div>
         <div class="chat-input-wrapper">
           <textarea
@@ -119,7 +120,7 @@
             rows="1"
             maxlength="1000"
           ></textarea>
-          <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+          <button class="chat-send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Envoyer"><span data-icon="send" data-icon-size="17"></span></button>
         </div>
       </div>
 
@@ -141,6 +142,7 @@
         <span class="nav-section-label">Médecin</span>
         <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
         <div class="nav-link active" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+        <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
         <span class="nav-section-label">Dossier</span>
         <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
       `;
@@ -153,7 +155,7 @@
     const aiInfoHint = document.querySelector('.chat-header-info div[style*="max-width"]');
     const suggestions = document.getElementById('suggestions');
 
-    if (topbarTitle) topbarTitle.textContent = '🤖 Assistant IA médecin';
+    if (topbarTitle) topbarTitle.innerHTML = '<span data-icon="bot" data-icon-size="22"></span>Assistant IA médecin';
     if (topbarSub) topbarSub.textContent = 'Aide au suivi clinique et communication patient';
     if (aiInfoTitle) aiInfoTitle.textContent = 'Assistant clinique IA';
     if (aiInfoHint) aiInfoHint.innerHTML = 'Conseils organisationnels. Le jugement médical reste prioritaire.';
@@ -248,7 +250,7 @@
           type: 'ai',
           message: isDoctor
             ? `Bonjour Dr ${user.profile.lastName || ''} ! Je suis votre **assistant IA clinique**.\n\nJe peux vous aider à :\n- organiser le suivi des patients\n- préparer des notifications\n- structurer les rappels de consultation\n\nComment puis-je vous aider aujourd'hui ?`
-            : `Bonjour ${user.profile.firstName} ! Je suis votre **assistant IA post-hospitalisation**. 😊\n\nJe suis là pour vous accompagner dans votre rétablissement. Je peux répondre à vos questions sur :\n- 💊 Vos médicaments\n- 🍽️ L'alimentation\n- 🏃 La reprise des activités\n- 🩹 Les soins de cicatrice\n- ❤️ Le suivi cardiaque\n\nComment puis-je vous aider aujourd'hui ?`,
+            : `Bonjour ${user.profile.firstName} ! Je suis votre **assistant de suivi thyroïdien**.\n\nJe m'appuie sur votre dossier pour vous répondre au quotidien :\n- **Votre traitement** — comment et quand le prendre, que faire en cas d'oubli\n- **Vos résultats** — ce que signifient la TSH, la T4 libre, les anticorps\n- **Vos symptômes** — fatigue, frilosité, palpitations, variations de poids\n- **Votre suivi** — prochains rendez-vous, bilans à prévoir\n\nJe ne pose pas de diagnostic et ne remplace pas votre médecin. En cas de signe d'urgence, appelez le **15**.\n\nQue puis-je faire pour vous ?`,
           timestamp: new Date().toISOString()
         };
         chatMessages.appendChild(renderMessage(welcomeMsg));

@@ -6,6 +6,9 @@ const Symptom = require('../models/Symptom');
 const ChatMessage = require('../models/ChatMessage');
 const Document = require('../models/Document');
 const Notification = require('../models/Notification');
+const ThyroidCheckin = require('../models/ThyroidCheckin');
+const AppleHealthMeasurement = require('../models/AppleHealthMeasurement');
+const Message = require('../models/Message');
 
 // Définir les associations
 async function initializeDatabase() {
@@ -28,6 +31,17 @@ async function initializeDatabase() {
 
     User.hasMany(Notification, { foreignKey: 'patientId' });
     Notification.belongsTo(User, { foreignKey: 'patientId' });
+
+    User.hasMany(ThyroidCheckin, { foreignKey: 'patientId' });
+    ThyroidCheckin.belongsTo(User, { foreignKey: 'patientId' });
+
+    User.hasMany(AppleHealthMeasurement, { foreignKey: 'patientId' });
+    AppleHealthMeasurement.belongsTo(User, { foreignKey: 'patientId' });
+
+    // Messagerie patient <-> médecin traitant
+    Message.belongsTo(User, { foreignKey: 'patientId', as: 'patient' });
+    Message.belongsTo(User, { foreignKey: 'doctorId', as: 'doctor' });
+    Message.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
 
     // Un médecin peut suivre plusieurs patients.
     User.hasMany(User, { foreignKey: 'treatingDoctorId', as: 'patients' });

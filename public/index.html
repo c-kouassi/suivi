@@ -144,6 +144,10 @@
             </p>
           </div>
 
+          <p class="text-sm" style="margin-top:8px; color:var(--text-muted);">
+            Un e-mail de confirmation vous sera envoyé après la création du compte.
+          </p>
+
           <button type="submit" class="btn btn-primary btn-full btn-lg">
             Créer mon compte
           </button>
@@ -266,7 +270,7 @@
         });
 
         if (role === 'patient') {
-          alert.textContent = '✅ ' + (data.message || 'Demande envoyée. En attente de validation médecin.');
+          alert.textContent = '✅ ' + (data.message || 'Compte créé avec succès. Un e-mail de confirmation a été envoyé.');
           alert.classList.add('alert-success');
           alert.classList.remove('hidden');
           form.reset();
@@ -274,6 +278,9 @@
           return;
         }
 
+        alert.textContent = '✅ ' + (data.message || 'Compte créé avec succès. Un e-mail de confirmation a été envoyé.');
+        alert.classList.add('alert-success');
+        alert.classList.remove('hidden');
         setAuth(data.token, data.user);
         window.location.href = '/dashboard';
       } catch (err) {

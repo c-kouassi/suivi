@@ -1,3 +1,22 @@
+/**
+ * ⚠️  SCRIPT OBSOLÈTE ET DESTRUCTEUR — conservé pour référence uniquement.
+ *
+ * Il exécute `sequelize.sync({ force: true })` : toutes les tables sont
+ * SUPPRIMÉES puis recréées, et il réinsère un ancien jeu de données
+ * cardiologique qui ne correspond plus au domaine de l'application.
+ *
+ * Pour remplir la base, utilisez :  npm run seed   (seedDemo.js)
+ *
+ * Ce garde-fou empêche un lancement accidentel — en local comme en production.
+ */
+if (process.env.ALLOW_DESTRUCTIVE_RESET !== 'yes-i-am-sure') {
+  console.error('\n⛔  initDb.js est obsolète et EFFACE toute la base de données.');
+  console.error('   Utilisez « npm run seed » pour charger le jeu de démonstration.');
+  console.error('   Si vous voulez vraiment tout réinitialiser :');
+  console.error('   ALLOW_DESTRUCTIVE_RESET=yes-i-am-sure node initDb.js\n');
+  process.exit(1);
+}
+
 require('dotenv').config();
 const sequelize = require('./config/database');
 const User = require('./models/User');

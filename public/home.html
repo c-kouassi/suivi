@@ -3,84 +3,405 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SuiviPatient - Accueil</title>
+  <title>SuiviPatient — Suivi des troubles thyroïdiens</title>
+  <meta name="description" content="Plateforme de suivi entre deux consultations pour les patients thyroïdiens et leur endocrinologue : check-in symptômes, bilans TSH et T4 libre, courbes d'évolution, alertes priorisées.">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="landing-page">
+
   <header class="landing-header">
-    <a class="landing-brand" href="/">SuiviPatient</a>
-    <nav class="landing-nav">
-      <a href="/auth" class="btn btn-ghost">Connexion</a>
-      <a href="/auth#register" class="btn btn-primary">Créer un compte</a>
-    </nav>
+    <div class="landing-wrap">
+      <a class="landing-brand" href="/">
+        <span class="landing-brand-mark" data-icon="pulse" data-icon-size="19"></span>
+        <span>SuiviPatient<small>Suivi thyroïdien</small></span>
+      </a>
+      <nav class="landing-nav">
+        <a class="landing-nav-link" href="#pathologies">Pathologies</a>
+        <a class="landing-nav-link" href="#fonctionnalites">Fonctionnalités</a>
+        <a class="landing-nav-link" href="#medecin">Pour les médecins</a>
+        <a href="/auth" class="btn btn-ghost">Connexion</a>
+        <a href="/auth#register" class="btn btn-primary" id="heroCta2">Créer un compte</a>
+      </nav>
+    </div>
   </header>
 
-  <main class="landing-main">
-    <section class="hero-section">
-      <div class="hero-copy">
-        <p class="hero-kicker">SUIVI POST-HOSPITALISATION</p>
-        <h1>Votre rétablissement,
-          <span>guidé chaque jour</span>
-        </h1>
-        <p class="hero-subtitle">
-          SuiviPatient aide les patients et les médecins à rester connectés: médicaments,
-          symptômes, rendez-vous, et assistant IA dans un seul espace.
-        </p>
-        <div class="hero-actions">
-          <a href="/auth" class="btn btn-primary btn-lg">Commencer maintenant</a>
-          <a href="/dashboard" class="btn btn-outline btn-lg">Accéder au tableau de bord</a>
-        </div>
-      </div>
+  <main>
 
-      <div class="hero-card">
-        <p class="hero-card-title">Aujourd'hui sur SuiviPatient</p>
-        <div class="hero-metrics">
-          <article>
-            <h3>98%</h3>
-            <p>prises de traitement
-              confirmées</p>
+    <!-- ================= HERO ================= -->
+    <div class="landing-wrap">
+      <section class="hero-section">
+        <div class="hero-copy">
+          <span class="hero-kicker">
+            <span data-icon="activity" data-icon-size="13"></span>
+            SUIVI DES TROUBLES THYROÏDIENS
+          </span>
+          <h1>La thyroïde se surveille <span>dans la durée</span>, pas seulement en consultation.</h1>
+          <p class="hero-subtitle">
+            Entre deux rendez-vous, tout se joue sur la régularité : la prise du traitement, les
+            symptômes, l'évolution de la TSH. SuiviPatient relie le patient à son endocrinologue et
+            fait remonter automatiquement les situations qui ne peuvent pas attendre.
+          </p>
+          <div class="hero-actions">
+            <a href="/auth#register" class="btn btn-primary btn-lg" id="heroCta">Créer mon compte patient</a>
+            <a href="/auth" class="btn btn-outline btn-lg">Espace médecin</a>
+          </div>
+          <div class="hero-trust">
+            <span><span data-icon="check" data-icon-size="14"></span>Rattachement par code médecin</span>
+            <span><span data-icon="check" data-icon-size="14"></span>Dossier partagé patient / praticien</span>
+            <span><span data-icon="check" data-icon-size="14"></span>Ne remplace pas un avis médical</span>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="hero-visual-stage">
+
+            <!-- Illustration anatomique : glande thyroïde sur la trachée -->
+            <svg class="thyroid" viewBox="0 0 320 320" role="img"
+                 aria-label="Illustration anatomique de la glande thyroïde autour de la trachée">
+              <defs>
+                <linearGradient id="gGland" x1="0" y1="0" x2="0.4" y2="1">
+                  <stop offset="0%" stop-color="#2aa896"/>
+                  <stop offset="55%" stop-color="#0f7a6c"/>
+                  <stop offset="100%" stop-color="#0b5f51"/>
+                </linearGradient>
+                <linearGradient id="gTrachea" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#dceee8"/>
+                  <stop offset="45%" stop-color="#f4fbf8"/>
+                  <stop offset="100%" stop-color="#cfe5de"/>
+                </linearGradient>
+                <radialGradient id="gGlow" cx="50%" cy="48%" r="50%">
+                  <stop offset="0%" stop-color="#0f7a6c" stop-opacity="0.16"/>
+                  <stop offset="100%" stop-color="#0f7a6c" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+
+              <!-- halo -->
+              <circle cx="160" cy="164" r="128" fill="url(#gGlow)"/>
+              <!-- cercle de repère façon imagerie -->
+              <circle cx="160" cy="164" r="118" fill="none" stroke="#0f7a6c" stroke-opacity="0.16"
+                      stroke-width="1.5" stroke-dasharray="4 9"/>
+
+              <!-- Cartilage thyroïde (pomme d'Adam) -->
+              <path d="M150,60 C150,40 155,26 160,26 C165,26 170,40 170,60 Z"
+                    fill="url(#gTrachea)" stroke="#b9d8ce" stroke-width="2" stroke-linejoin="round"/>
+
+              <!-- Trachée (étroite : la glande reste entièrement visible de part et d'autre) -->
+              <rect x="152" y="56" width="16" height="216" rx="8"
+                    fill="url(#gTrachea)" stroke="#b9d8ce" stroke-width="2"/>
+              <g stroke="#b9d8ce" stroke-width="1.8" stroke-linecap="round">
+                <line x1="155" y1="78" x2="165" y2="78"/>
+                <line x1="155" y1="94" x2="165" y2="94"/>
+                <line x1="155" y1="110" x2="165" y2="110"/>
+                <line x1="155" y1="240" x2="165" y2="240"/>
+                <line x1="155" y1="256" x2="165" y2="256"/>
+              </g>
+
+              <!-- Lobe droit (à gauche de l'image) : pôle supérieur effilé, corps renflé -->
+              <path d="M151,100
+                       C148,116 146,124 144,130
+                       C132,131 120,141 115,157
+                       C110,175 113,196 122,207
+                       C131,218 143,215 147,203
+                       C151,190 152,160 152,138
+                       C152,120 152,108 151,100 Z"
+                    fill="url(#gGland)"/>
+              <!-- Lobe gauche -->
+              <path d="M169,100
+                       C172,116 174,124 176,130
+                       C188,131 200,141 205,157
+                       C210,175 207,196 198,207
+                       C189,218 177,215 173,203
+                       C169,190 168,160 168,138
+                       C168,120 168,108 169,100 Z"
+                    fill="url(#gGland)"/>
+
+              <!-- Isthme : dessiné APRÈS les lobes pour bien les relier -->
+              <path d="M144,153 C153,147 167,147 176,153
+                       C178,161 178,171 176,179
+                       C167,185 153,185 144,179
+                       C142,171 142,161 144,153 Z"
+                    fill="url(#gGland)"/>
+
+              <!-- Reflets -->
+              <g fill="#ffffff" opacity="0.15">
+                <ellipse cx="129" cy="163" rx="8" ry="21" transform="rotate(-13 129 163)"/>
+                <ellipse cx="191" cy="163" rx="8" ry="21" transform="rotate(13 191 163)"/>
+              </g>
+
+              <!-- Tracé de suivi (rythme) -->
+              <path d="M72,292 H110 l8,-15 l12,30 l10,-21 l7,6 H248"
+                    fill="none" stroke="#0f7a6c" stroke-opacity="0.4" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+
+            <!-- Cartes flottantes -->
+            <div class="float-card float-tsh">
+              <span class="dot" style="background:#16a34a"></span>
+              <span>
+                <strong>TSH 2,1</strong>
+                <em>mUI/L · dans la cible</em>
+              </span>
+            </div>
+
+            <div class="float-card float-curve">
+              <em>T4 libre — 6 derniers mois</em>
+              <svg width="118" height="34" viewBox="0 0 118 34" aria-hidden="true">
+                <path d="M3,28 L23,24 L43,26 L63,17 L83,12 L115,7" fill="none"
+                      stroke="#0f7a6c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="115" cy="7" r="3.5" fill="#0f7a6c"/>
+              </svg>
+            </div>
+
+            <div class="float-card float-checkin">
+              <span class="dot" style="background:#0f7a6c"></span>
+              <span>
+                <strong>Check-in du jour</strong>
+                <em>envoyé au Dr Lefèvre</em>
+              </span>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= PATHOLOGIES ================= -->
+    <section class="landing-section" id="pathologies">
+      <div class="landing-wrap">
+        <div class="section-head">
+          <span class="section-kicker">Ce que l'on suit</span>
+          <h2>Pensé pour les pathologies thyroïdiennes</h2>
+          <p>Le questionnaire, les constantes suivies et les seuils d'alerte sont ceux du suivi
+            endocrinologique — pas un formulaire de santé générique.</p>
+        </div>
+
+        <div class="cond-grid">
+          <article class="cond-card">
+            <div class="cond-ico" data-icon="activity" data-icon-size="20"></div>
+            <h3>Hypothyroïdie</h3>
+            <p>Hashimoto, hypothyroïdie fruste. Suivi de la fatigue, de la frilosité, du poids et
+              de l'équilibre sous lévothyroxine.</p>
+            <span class="tag">TSH · T4L · poids</span>
           </article>
-          <article>
-            <h3>24/7</h3>
-            <p>assistant IA
-              disponible</p>
+
+          <article class="cond-card">
+            <div class="cond-ico" data-icon="heart" data-icon-size="20"></div>
+            <h3>Hyperthyroïdie</h3>
+            <p>Maladie de Basedow, nodule toxique. Surveillance des palpitations, de la fréquence
+              cardiaque et de la tolérance au traitement.</p>
+            <span class="tag">FC · T3L · tremblements</span>
           </article>
-          <article>
-            <h3>+120</h3>
-            <p>équipes médicales
-              actives</p>
+
+          <article class="cond-card">
+            <div class="cond-ico" data-icon="eye" data-icon-size="20"></div>
+            <h3>Nodules & goitre</h3>
+            <p>Nodule sous surveillance simple : rappel des échographies de contrôle et suivi de la
+              gêne cervicale entre deux examens.</p>
+            <span class="tag">Échographie · EU-TIRADS</span>
+          </article>
+
+          <article class="cond-card">
+            <div class="cond-ico" data-icon="stethoscope" data-icon-size="20"></div>
+            <h3>Post-thyroïdectomie</h3>
+            <p>Substitution après chirurgie, surveillance de la calcémie et du protocole
+              oncologique quand il s'applique.</p>
+            <span class="tag">Substitution · calcium</span>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="landing-features-grid">
-      <article class="landing-feature-card">
-        <h3>Suivi intelligent</h3>
-        <p>Historique des constantes, alertes utiles et vue claire des progrès.</p>
-      </article>
-      <article class="landing-feature-card">
-        <h3>Coordination médecin-patient</h3>
-        <p>Un médecin peut suivre un ou plusieurs patients dans un même espace.</p>
-      </article>
-      <article class="landing-feature-card">
-        <h3>Expérience simple</h3>
-        <p>Interface claire sur mobile et desktop pour ne rien oublier au quotidien.</p>
-      </article>
+    <!-- ================= FONCTIONNALITÉS ================= -->
+    <section class="landing-section" id="fonctionnalites">
+      <div class="landing-wrap">
+        <div class="section-head">
+          <span class="section-kicker">Fonctionnalités</span>
+          <h2>Tout le suivi au même endroit</h2>
+          <p>Côté patient, quelques minutes par semaine. Côté médecin, une lecture immédiate de
+            l'état de toute la patientèle.</p>
+        </div>
+
+        <div class="landing-features-grid">
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="clipboard" data-icon-size="21"></div>
+            <h3>Check-in thyroïdien scoré</h3>
+            <p>Questionnaire guidé + constantes. Un score de risque explicable classe le check-in
+              en normal, surveillance, important ou urgent.</p>
+          </article>
+
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="chart" data-icon-size="21"></div>
+            <h3>Courbes d'évolution</h3>
+            <p>TSH avec la zone cible, T4 libre, poids et fréquence cardiaque tracés dans le temps
+              pour voir si le traitement fait effet.</p>
+          </article>
+
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="alert" data-icon-size="21"></div>
+            <h3>Alertes priorisées</h3>
+            <p>Les cas urgents et importants remontent en haut du tableau de bord du médecin, avec
+              le motif clinique et le score.</p>
+          </article>
+
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="watch" data-icon-size="21"></div>
+            <h3>Apple Health & Apple Watch</h3>
+            <p>Fréquence cardiaque, FC de repos, poids et saturation synchronisés depuis l'iPhone,
+              avec l'accord du patient.</p>
+          </article>
+
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="messages" data-icon-size="21"></div>
+            <h3>Messagerie & documents</h3>
+            <p>Échanges directs avec le médecin traitant, dépôt des bilans sanguins et des
+              ordonnances, partage maîtrisé par le patient.</p>
+          </article>
+
+          <article class="landing-feature-card">
+            <div class="feat-ico" data-icon="bot" data-icon-size="21"></div>
+            <h3>Assistant IA d'accompagnement</h3>
+            <p>Répond aux questions du quotidien — prise du lévothyrox, effets ressentis — en
+              s'appuyant sur le dossier, et renvoie vers le médecin dès que c'est nécessaire.</p>
+          </article>
+        </div>
+      </div>
     </section>
+
+    <!-- ================= ÉTAPES ================= -->
+    <section class="landing-section tight">
+      <div class="landing-wrap">
+        <div class="section-head">
+          <span class="section-kicker">Comment ça marche</span>
+          <h2>Trois étapes, puis ça tourne tout seul</h2>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <h3>Le médecin donne son code</h3>
+            <p>Chaque praticien dispose d'un code d'invitation. Le patient l'utilise à
+              l'inscription et se retrouve rattaché au bon dossier.</p>
+          </article>
+          <article class="step-card">
+            <h3>Le patient fait ses check-in</h3>
+            <p>Symptômes, constantes, résultats de laboratoire. Quelques minutes, au rythme fixé
+              par le médecin.</p>
+          </article>
+          <article class="step-card">
+            <h3>Le médecin voit l'essentiel</h3>
+            <p>Les cas urgents remontent d'eux-mêmes, les courbes montrent la tendance, et la
+              consultation part de données réelles.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= MÉDECIN ================= -->
+    <section class="landing-section" id="medecin">
+      <div class="landing-wrap">
+        <div class="doctor-split">
+          <div>
+            <span class="section-kicker">Pour les médecins</span>
+            <h2 style="font-size:clamp(1.5rem,2.6vw,2.1rem); line-height:1.15; letter-spacing:-0.025em; margin-bottom:12px;">
+              Commencez la journée par les patients qui comptent
+            </h2>
+            <p style="color:var(--text-secondary); line-height:1.62;">
+              Plus besoin d'ouvrir vingt dossiers pour savoir qui va mal. Le tableau de bord ouvre
+              directement sur les check-in urgents et importants.
+            </p>
+
+            <ul class="doctor-list">
+              <li><span class="ico-slot" data-icon="check" data-icon-size="17"></span>
+                <span><b>Triage automatique</b> — score de risque, motif clinique et dernières constantes sur chaque cas.</span></li>
+              <li><span class="ico-slot" data-icon="check" data-icon-size="17"></span>
+                <span><b>Vue TSH de la patientèle</b> — qui est hors cible, en un coup d'œil.</span></li>
+              <li><span class="ico-slot" data-icon="check" data-icon-size="17"></span>
+                <span><b>Dossier complet</b> — traitements, rendez-vous, documents partagés, courbes d'évolution.</span></li>
+              <li><span class="ico-slot" data-icon="check" data-icon-size="17"></span>
+                <span><b>Contact direct</b> — message au patient ou envoi d'une ordonnance sans quitter le dossier.</span></li>
+            </ul>
+          </div>
+
+          <!-- Aperçu du tableau de bord médecin -->
+          <div class="mock" aria-hidden="true">
+            <div class="mock-bar">
+              <i></i><i></i><i></i>
+              <span>Tableau de bord — Dr Lefèvre, endocrinologie</span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-title">
+                <span data-icon="alert" data-icon-size="15"></span>
+                Cas urgents et importants
+              </div>
+
+              <div class="mock-row urgent">
+                <span class="sev">URGENT</span>
+                <span class="who"><b>Marc P.</b><span>Basedow · FC 118 · TSH &lt; 0,01</span></span>
+                <span class="score" style="color:#ef4444">95</span>
+              </div>
+              <div class="mock-row important">
+                <span class="sev">IMPORTANT</span>
+                <span class="who"><b>Hélène R.</b><span>Hypothyroïdie fruste · TSH 6,8</span></span>
+                <span class="score" style="color:#f97316">45</span>
+              </div>
+
+              <div class="mock-spark">
+                <p>TSH — Julie M., 6 derniers mois</p>
+                <svg width="100%" height="58" viewBox="0 0 300 58" preserveAspectRatio="none">
+                  <rect x="0" y="22" width="300" height="20" fill="rgba(34,197,94,0.14)"/>
+                  <line x1="0" y1="22" x2="300" y2="22" stroke="rgba(34,197,94,0.55)" stroke-dasharray="3 3"/>
+                  <line x1="0" y1="42" x2="300" y2="42" stroke="rgba(34,197,94,0.55)" stroke-dasharray="3 3"/>
+                  <path d="M8,8 L68,14 L128,20 L188,30 L248,33 L292,32" fill="none"
+                        stroke="#0f7a6c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="292" cy="32" r="4.5" fill="#0f7a6c"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CTA ================= -->
+    <div class="landing-wrap">
+      <section class="landing-cta">
+        <div>
+          <h2>Prêt à suivre votre thyroïde autrement ?</h2>
+          <p>Créez votre compte avec le code de votre médecin, ou ouvrez un espace praticien pour
+            suivre vos patients.</p>
+        </div>
+        <div class="hero-actions" style="margin:0;">
+          <a href="/auth#register" class="btn btn-primary btn-lg">Créer un compte</a>
+          <a href="/auth" class="btn btn-outline btn-lg" style="color:#eafaf5; border-color:rgba(255,255,255,0.5);">Se connecter</a>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <footer class="landing-footer">
+    <div class="landing-wrap">
+      <span>© <span id="year">2026</span> SuiviPatient — projet étudiant HETIC</span>
+      <span class="disclaimer">
+        Outil d'accompagnement du suivi médical. Il ne pose aucun diagnostic et ne remplace pas une
+        consultation. En cas d'urgence, appelez le 15.
+      </span>
+    </div>
+  </footer>
 
   <script src="/js/app.js"></script>
   <script>
-    // Si déjà connecté, garder un accès direct au dashboard.
-    if (getToken()) {
-      const cta = document.querySelector('.hero-actions a.btn-primary');
-      if (cta) cta.setAttribute('href', '/dashboard');
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Si déjà connecté, les CTA renvoient vers l'espace personnel.
+    if (typeof getToken === 'function' && getToken()) {
+      const cta = document.getElementById('heroCta');
+      if (cta) { cta.textContent = 'Accéder à mon espace'; cta.setAttribute('href', '/dashboard'); }
+      const cta2 = document.getElementById('heroCta2');
+      if (cta2) { cta2.textContent = 'Mon espace'; cta2.setAttribute('href', '/dashboard'); }
     }
 
-    // Permet d'ouvrir directement la vue inscription depuis /auth#register.
+    // Permet d'ouvrir directement la vue inscription depuis /#register.
     if (window.location.hash === '#register') {
       window.location.href = '/auth#register';
     }

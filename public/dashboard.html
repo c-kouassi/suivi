@@ -1,482 +1,1490 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SuiviPatient - Tableau de bord</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    .ai-fab {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      border: none;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      font-size: 22px;
-      cursor: pointer;
-      box-shadow: var(--shadow-lg);
-      z-index: 1200;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SuiviPatient - Tableau de bord</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .ai-fab {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        border: none;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        font-size: 22px;
+        cursor: pointer;
+        box-shadow: var(--shadow-lg);
+        z-index: 1200;
+      }
 
-    .ai-dialog {
-      position: fixed;
-      right: 24px;
-      bottom: 92px;
-      width: min(420px, calc(100vw - 24px));
-      max-height: 72vh;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      display: none;
-      flex-direction: column;
-      overflow: hidden;
-      z-index: 1201;
-    }
+      .ai-dialog {
+        position: fixed;
+        right: 24px;
+        bottom: 92px;
+        width: min(420px, calc(100vw - 24px));
+        max-height: 72vh;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 1201;
+      }
 
-    .ai-dialog.open { display: flex; }
+      .ai-dialog.open {
+        display: flex;
+      }
 
-    .ai-dialog-header {
-      padding: 12px 14px;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.9rem;
-      font-weight: 700;
-    }
+      .ai-dialog-header {
+        padding: 12px 14px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
 
-    .ai-dialog-body {
-      padding: 12px;
-      overflow-y: auto;
-      min-height: 220px;
-      max-height: 48vh;
-      background: var(--surface-2);
-    }
+      .ai-dialog-body {
+        padding: 12px;
+        overflow-y: auto;
+        min-height: 220px;
+        max-height: 48vh;
+        background: var(--surface-2);
+      }
 
-    .ai-mini-msg {
-      margin-bottom: 10px;
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-    }
+      .ai-mini-msg {
+        margin-bottom: 10px;
+        display: flex;
+        gap: 8px;
+        align-items: flex-start;
+      }
 
-    .ai-mini-msg.user { flex-direction: row-reverse; }
+      .ai-mini-msg.user {
+        flex-direction: row-reverse;
+      }
 
-    .ai-mini-bubble {
-      background: white;
-      border: 1px solid var(--border-light);
-      padding: 10px 12px;
-      border-radius: 10px;
-      font-size: 0.83rem;
-      max-width: 84%;
-      line-height: 1.45;
-    }
+      .ai-mini-bubble {
+        background: white;
+        border: 1px solid var(--border-light);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 0.83rem;
+        max-width: 84%;
+        line-height: 1.45;
+      }
 
-    .ai-mini-msg.user .ai-mini-bubble {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
+      .ai-mini-msg.user .ai-mini-bubble {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+      }
 
-    .ai-dialog-input {
-      display: flex;
-      gap: 8px;
-      border-top: 1px solid var(--border);
-      padding: 10px;
-      background: white;
-    }
+      .ai-dialog-input {
+        display: flex;
+        gap: 8px;
+        border-top: 1px solid var(--border);
+        padding: 10px;
+        background: white;
+      }
 
-    .ai-dialog-input input {
-      flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 0.85rem;
-      outline: none;
-    }
+      .ai-dialog-input input {
+        flex: 1;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 0.85rem;
+        outline: none;
+      }
 
-    .ai-dialog-input button {
-      border: none;
-      border-radius: 8px;
-      padding: 0 12px;
-      background: var(--primary);
-      color: white;
-      cursor: pointer;
-      font-weight: 700;
-    }
-  </style>
-</head>
-<body>
-<div class="app-layout">
+      .ai-dialog-input button {
+        border: none;
+        border-radius: 8px;
+        padding: 0 12px;
+        background: var(--primary);
+        color: white;
+        cursor: pointer;
+        font-weight: 700;
+      }
 
-  <!-- Sidebar -->
-  <nav class="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-icon">🏥</div>
-      <div class="sidebar-logo-text">
-        <h2>SuiviPatient</h2>
-        <span>Post-hospitalisation</span>
-      </div>
-    </div>
-    <nav class="sidebar-nav">
-      <span class="nav-section-label">Principal</span>
-      <div class="nav-link active" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
-      <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
-      <span class="nav-section-label">Santé</span>
-      <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
-      <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
-      <div class="nav-link" data-href="/appointments"><span class="nav-icon">📅</span>Rendez-vous</div>
-      <span class="nav-section-label">Dossier médical</span>
-      <div class="nav-link" data-href="/documents"><span class="nav-icon">📁</span>Documents</div>
-      <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
-    </nav>
-    <div class="sidebar-footer">
-      <div class="patient-card" onclick="window.location.href='/profile'">
-        <div class="avatar" id="sidebarAvatar">JD</div>
-        <div class="patient-info">
-          <h4 id="sidebarName">Chargement...</h4>
-          <span id="sidebarRole">Patient</span>
-        </div>
-      </div>
-      <button class="btn btn-ghost btn-full mt-2" onclick="logout()" style="font-size:0.8rem;">🚪 Se déconnecter</button>
-    </div>
-  </nav>
+      .checkin-progress {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        margin-bottom: 24px;
+      }
 
-  <!-- Main -->
-  <div class="main-content">
-    <div class="topbar">
-      <div class="topbar-left">
-        <h1 id="welcomeTitle">Bonjour 👋</h1>
-        <p id="welcomeSub">Voici votre bilan de santé du jour</p>
-      </div>
-      <div class="topbar-right">
-        <div class="notification-btn" onclick="window.location.href='/appointments'">
-          <span>🔔</span>
-          <span class="notif-dot" id="notifDot" style="display:none"></span>
-        </div>
-        <div class="avatar" id="topbarAvatar" onclick="window.location.href='/profile'" style="cursor:pointer">JD</div>
-      </div>
-    </div>
+      .checkin-progress > div {
+        background: var(--surface-3);
+        border-radius: 999px;
+        height: 6px;
+        margin-top: 8px;
+        overflow: hidden;
+      }
 
-    <div class="page-content">
+      #thyroidProgressBar {
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        border-radius: inherit;
+        display: block;
+        height: 100%;
+        transition: width 0.2s ease;
+      }
 
-      <!-- Recovery progress -->
-      <div class="recovery-bar" id="recoverySection">
-        <div class="recovery-header">
-          <h4>🏥 Progression du rétablissement</h4>
-          <span id="recoveryPercent">0%</span>
-        </div>
-        <div class="progress-bar">
-          <div class="progress-fill" id="recoveryFill" style="width:0%"></div>
-        </div>
-        <p id="recoveryText" class="text-muted mt-2" style="font-size:0.78rem;"></p>
-      </div>
+      .checkin-choice-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 20px;
+      }
 
-      <!-- Stats Cards -->
-      <div class="stats-grid" id="statsGrid">
-        <div class="stat-card">
-          <div class="stat-icon blue">💊</div>
-          <div class="stat-info">
-            <h3 id="statMeds">-</h3>
-            <p>Médicaments</p>
-            <span class="stat-change neutral">du jour</span>
+      .checkin-choice {
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 16px;
+      }
+
+      .checkin-choice:has(input:checked) {
+        background: var(--primary-light);
+        border-color: var(--primary);
+      }
+
+      .checkin-choice span {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+      }
+
+      .thyroid-step h4 {
+        color: var(--text-primary);
+        font-size: 1.05rem;
+        margin-bottom: 6px;
+      }
+
+      .voice-note-row {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      @media (max-width: 600px) {
+        .checkin-choice-grid {
+          grid-template-columns: 1fr;
+        }
+        .voice-note-row {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      /* --- Graphiques médecin --- */
+      .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+      }
+      .chart-box {
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 14px;
+        background: var(--surface);
+      }
+      .chart-box h5 {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .chart-box svg {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+      }
+      .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 6px;
+      }
+      .chart-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .chart-legend i {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      .tsh-row {
+        display: grid;
+        grid-template-columns: 130px 1fr 70px;
+        align-items: center;
+        gap: 10px;
+        padding: 5px 0;
+        cursor: pointer;
+        font-size: 0.8rem;
+      }
+      .tsh-row:hover {
+        background: var(--surface-2);
+      }
+      .tsh-track {
+        position: relative;
+        height: 14px;
+        border-radius: 7px;
+        background: var(--surface-3);
+        overflow: hidden;
+      }
+      .tsh-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        border-radius: 7px;
+      }
+      .tsh-zone {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: rgba(34, 197, 94, 0.18);
+        border-left: 1px dashed rgba(34, 197, 94, 0.6);
+        border-right: 1px dashed rgba(34, 197, 94, 0.6);
+      }
+
+      /* --- Cas prioritaires --- */
+      .prio-item {
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-left: 4px solid var(--text-muted);
+        border-radius: 10px;
+        margin-bottom: 10px;
+      }
+      .prio-item.urgent {
+        border-left-color: #ef4444;
+        background: rgba(239, 68, 68, 0.045);
+      }
+      .prio-item.important {
+        border-left-color: #f97316;
+        background: rgba(249, 115, 22, 0.045);
+      }
+      .prio-sev {
+        flex-shrink: 0;
+        width: 84px;
+        text-align: center;
+      }
+      .prio-sev .tag {
+        display: inline-block;
+        font-size: 0.62rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        padding: 2px 8px;
+        border-radius: 999px;
+        color: #fff;
+      }
+      .prio-item.urgent .prio-sev .tag {
+        background: #ef4444;
+      }
+      .prio-item.important .prio-sev .tag {
+        background: #f97316;
+      }
+      .prio-sev .score {
+        display: block;
+        margin-top: 4px;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        line-height: 1.1;
+      }
+      .prio-sev .score small {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        display: block;
+      }
+      .prio-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .prio-main h4 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      .prio-main .diag {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+      }
+      .prio-main .reason {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .prio-main .meta {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 5px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 10px;
+      }
+      .prio-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      @media (max-width: 640px) {
+        .prio-item {
+          flex-wrap: wrap;
+        }
+        .prio-actions {
+          flex-direction: row;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-layout">
+      <!-- Sidebar -->
+      <nav class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">🏥</div>
+          <div class="sidebar-logo-text">
+            <h2>SuiviPatient</h2>
+            <span>Suivi thyroïdien</span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon green">📅</div>
-          <div class="stat-info">
-            <h3 id="statApts">-</h3>
-            <p>Rendez-vous</p>
-            <span class="stat-change neutral">à venir</span>
+        <nav class="sidebar-nav">
+          <span class="nav-section-label">Principal</span>
+          <div class="nav-link active" data-href="/dashboard">
+            <span class="nav-icon">🏠</span>Tableau de bord
           </div>
-        </div>
-        <div class="stat-card" id="heartRateCard">
-          <div class="stat-icon red">❤️</div>
-          <div class="stat-info">
-            <h3 id="statHR">-</h3>
-            <p>Rythme cardiaque</p>
-            <span class="stat-change neutral">bpm</span>
+          <div class="nav-link" data-href="/chat">
+            <span class="nav-icon">🤖</span>Assistant IA
           </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon orange">⏱️</div>
-          <div class="stat-info">
-            <h3 id="statDays">-</h3>
-            <p>Jours de convalescence</p>
-            <span class="stat-change neutral" id="statDaysLabel">depuis la sortie</span>
+          <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
+          <span class="nav-section-label">Santé</span>
+          <div class="nav-link" data-href="/symptoms">
+            <span class="nav-icon">📊</span>Suivi symptômes
           </div>
-        </div>
-      </div>
-
-      <!-- Grid principal -->
-      <div class="dashboard-grid">
-
-        <!-- Prochains RDV -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">📅 Prochains rendez-vous</span>
-            <button class="btn btn-outline btn-sm" onclick="window.location.href='/appointments'">Voir tout</button>
+          <div class="nav-link" data-href="/medications">
+            <span class="nav-icon">💊</span>Médicaments
           </div>
-          <div class="card-body" id="aptList">
-            <div class="empty-state">
-              <div class="empty-state-icon">📅</div>
-              <h3>Chargement...</h3>
+          <div class="nav-link" data-href="/appointments">
+            <span class="nav-icon">📅</span>Rendez-vous
+          </div>
+          <span class="nav-section-label">Dossier médical</span>
+          <div class="nav-link" data-href="/documents">
+            <span class="nav-icon">📁</span>Documents
+          </div>
+          <div class="nav-link" data-href="/profile">
+            <span class="nav-icon">👤</span>Mon profil
+          </div>
+        </nav>
+        <div class="sidebar-footer">
+          <div class="patient-card" onclick="window.location.href = '/profile'">
+            <div class="avatar" id="sidebarAvatar">JD</div>
+            <div class="patient-info">
+              <h4 id="sidebarName">Chargement...</h4>
+              <span id="sidebarRole">Patient</span>
             </div>
           </div>
+          <button
+            class="btn btn-ghost btn-full mt-2"
+            onclick="logout()"
+            style="font-size: 0.8rem"
+          >
+            🚪 Se déconnecter
+          </button>
         </div>
+      </nav>
 
-        <!-- Santé du jour -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">❤️ Santé du jour</span>
-            <button class="btn btn-outline btn-sm" onclick="window.location.href='/symptoms'">Saisir</button>
+      <!-- Main -->
+      <div class="main-content">
+        <div class="topbar">
+          <div class="topbar-left">
+            <h1 id="welcomeTitle">Bonjour 👋</h1>
+            <p id="welcomeSub">Voici votre bilan de santé du jour</p>
           </div>
-          <div class="card-body">
-            <div class="health-score" id="healthScore">
-              <div class="score-ring">
-                <svg width="140" height="140" viewBox="0 0 140 140">
-                  <circle cx="70" cy="70" r="56" fill="none" stroke="#E2E8F0" stroke-width="10"/>
-                  <circle cx="70" cy="70" r="56" fill="none" stroke="var(--primary)" stroke-width="10"
-                    stroke-dasharray="351.86" id="healthCircle" stroke-dashoffset="351.86"
-                    stroke-linecap="round"/>
-                </svg>
-                <div class="score-ring-text">
-                  <span class="score-num" id="healthNum">-</span>
-                  <span class="score-label">Score</span>
+          <div class="topbar-right">
+            <button
+              class="btn btn-secondary btn-sm"
+              id="thyroidCheckinBtn"
+              onclick="openModal('thyroidCheckinModal')"
+              title="Faire le checking thyroïde"
+            >
+              🦋 Checking thyroïde
+            </button>
+            <div class="notif-wrap">
+              <div
+                class="notification-btn"
+                id="notifBtn"
+                role="button"
+                tabindex="0"
+                aria-label="Notifications"
+                aria-expanded="false"
+              >
+                <span data-icon="bell" data-icon-size="18"></span>
+                <span
+                  class="notif-dot"
+                  id="notifDot"
+                  style="display: none"
+                ></span>
+              </div>
+
+              <div class="notif-panel" id="notifPanel" hidden>
+                <div class="notif-panel-head">
+                  <h4>Notifications</h4>
+                  <button type="button" id="notifReadAll">
+                    Tout marquer comme lu
+                  </button>
+                </div>
+                <div class="notif-list" id="notifList">
+                  <div class="notif-empty">Chargement…</div>
                 </div>
               </div>
             </div>
-            <div class="health-metrics" id="healthMetrics">
-              <div class="health-metric">
-                <span class="health-metric-icon">❤️</span>
-                <span class="health-metric-label">Fréquence cardiaque</span>
-                <span class="health-metric-value" id="hmHR">-</span>
-                <span class="health-metric-status" id="hmHRStatus"></span>
-              </div>
-              <div class="health-metric">
-                <span class="health-metric-icon">🩸</span>
-                <span class="health-metric-label">Tension artérielle</span>
-                <span class="health-metric-value" id="hmBP">-</span>
-                <span class="health-metric-status" id="hmBPStatus"></span>
-              </div>
-              <div class="health-metric">
-                <span class="health-metric-icon">🌡️</span>
-                <span class="health-metric-label">Température</span>
-                <span class="health-metric-value" id="hmTemp">-</span>
-                <span class="health-metric-status" id="hmTempStatus"></span>
-              </div>
-              <div class="health-metric">
-                <span class="health-metric-icon">💨</span>
-                <span class="health-metric-label">Saturation O₂</span>
-                <span class="health-metric-value" id="hmO2">-</span>
-                <span class="health-metric-status" id="hmO2Status"></span>
-              </div>
+            <div
+              class="avatar"
+              id="topbarAvatar"
+              onclick="window.location.href = '/profile'"
+              style="cursor: pointer"
+            >
+              JD
             </div>
           </div>
         </div>
 
-        <!-- Médicaments du jour -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">💊 Médicaments du jour</span>
-            <button class="btn btn-outline btn-sm" onclick="window.location.href='/medications'">Gérer</button>
+        <div class="page-content">
+          <!-- Recovery progress -->
+
+          <!-- Stats Cards -->
+          <div class="stats-grid" id="statsGrid">
+            <div class="stat-card is-clickable" role="link" tabindex="0" onclick="window.location.href='/medications'">
+              <div class="stat-icon blue" data-icon="pill" data-icon-size="22"></div>
+              <div class="stat-info">
+                <h3 id="statMeds">-</h3>
+                <p>Médicaments</p>
+                <span class="stat-change neutral">du jour</span>
+              </div>
+            </div>
+            <div class="stat-card is-clickable" role="link" tabindex="0" onclick="window.location.href='/appointments'">
+              <div class="stat-icon green" data-icon="calendar" data-icon-size="22"></div>
+              <div class="stat-info">
+                <h3 id="statApts">-</h3>
+                <p>Rendez-vous</p>
+                <span class="stat-change neutral">à venir</span>
+              </div>
+            </div>
+            <div class="stat-card is-clickable" id="heartRateCard" role="link" tabindex="0" onclick="window.location.href='/symptoms'">
+              <div class="stat-icon red" data-icon="heart" data-icon-size="22"></div>
+              <div class="stat-info">
+                <h3 id="statHR">-</h3>
+                <p>Rythme cardiaque</p>
+                <span class="stat-change neutral">bpm</span>
+              </div>
+            </div>
+            <div class="stat-card is-clickable" role="link" tabindex="0" onclick="window.location.href='/symptoms'">
+              <div class="stat-icon orange" data-icon="activity" data-icon-size="22"></div>
+              <div class="stat-info">
+                <h3 id="statTsh">-</h3>
+                <p>Dernière TSH</p>
+                <span class="stat-change neutral" id="statTshLabel"
+                  >mUI/L · cible 0,4–4,0</span
+                >
+              </div>
+            </div>
           </div>
-          <div class="card-body" id="medList">
-            <div class="empty-state">
-              <div class="empty-state-icon">💊</div>
-              <h3>Chargement...</h3>
+
+          <div class="card" id="appleHealthCard" style="margin-bottom: 24px">
+            <div class="card-header">
+              <span class="card-title">⌚ Apple Watch / Apple Health</span>
+              <span class="text-muted" id="appleHealthSyncStatus"
+                >En attente de synchronisation</span
+              >
+            </div>
+            <div class="card-body" id="appleHealthSummary">
+              <p class="text-sm text-muted">
+                Les données apparaîtront ici après la synchronisation depuis
+                l’application mobile SuiviPatient.
+              </p>
+            </div>
+          </div>
+
+          <!-- Grid principal -->
+          <div class="dashboard-grid">
+            <!-- Prochains RDV -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📅 Prochains rendez-vous</span>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="window.location.href = '/appointments'"
+                >
+                  Voir tout
+                </button>
+              </div>
+              <div class="card-body" id="aptList">
+                <div class="empty-state">
+                  <div class="empty-state-icon">📅</div>
+                  <h3>Chargement...</h3>
+                </div>
+              </div>
+            </div>
+
+            <!-- Santé du jour -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">❤️ Santé du jour</span>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="window.location.href = '/symptoms'"
+                >
+                  Saisir
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="health-score" id="healthScore">
+                  <div class="score-ring">
+                    <svg width="140" height="140" viewBox="0 0 140 140">
+                      <circle
+                        cx="70"
+                        cy="70"
+                        r="56"
+                        fill="none"
+                        stroke="#E2E8F0"
+                        stroke-width="10"
+                      />
+                      <circle
+                        cx="70"
+                        cy="70"
+                        r="56"
+                        fill="none"
+                        stroke="var(--primary)"
+                        stroke-width="10"
+                        stroke-dasharray="351.86"
+                        id="healthCircle"
+                        stroke-dashoffset="351.86"
+                        stroke-linecap="round"
+                      />
+                    </svg>
+                    <div class="score-ring-text">
+                      <span class="score-num" id="healthNum">-</span>
+                      <span class="score-label">Score</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="health-metrics" id="healthMetrics">
+                  <div class="health-metric">
+                    <span class="health-metric-icon">❤️</span>
+                    <span class="health-metric-label">Fréquence cardiaque</span>
+                    <span class="health-metric-value" id="hmHR">-</span>
+                    <span class="health-metric-status" id="hmHRStatus"></span>
+                  </div>
+                  <div class="health-metric">
+                    <span class="health-metric-icon">🩸</span>
+                    <span class="health-metric-label">Tension artérielle</span>
+                    <span class="health-metric-value" id="hmBP">-</span>
+                    <span class="health-metric-status" id="hmBPStatus"></span>
+                  </div>
+                  <div class="health-metric">
+                    <span class="health-metric-icon">🌡️</span>
+                    <span class="health-metric-label">Température</span>
+                    <span class="health-metric-value" id="hmTemp">-</span>
+                    <span class="health-metric-status" id="hmTempStatus"></span>
+                  </div>
+                  <div class="health-metric">
+                    <span class="health-metric-icon">💨</span>
+                    <span class="health-metric-label">Saturation O₂</span>
+                    <span class="health-metric-value" id="hmO2">-</span>
+                    <span class="health-metric-status" id="hmO2Status"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Médicaments du jour -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">💊 Médicaments du jour</span>
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="window.location.href = '/medications'"
+                >
+                  Gérer
+                </button>
+              </div>
+              <div class="card-body" id="medList">
+                <div class="empty-state">
+                  <div class="empty-state-icon">💊</div>
+                  <h3>Chargement...</h3>
+                </div>
+              </div>
+            </div>
+
+            <!-- Assistant IA -->
+            <div
+              class="card"
+              style="
+                background: linear-gradient(135deg, #1b6ca8, #00bfa5);
+                color: white;
+                border: none;
+              "
+            >
+              <div class="card-body" style="padding: 28px">
+                <div style="font-size: 40px; margin-bottom: 12px">🤖</div>
+                <h3
+                  style="
+                    font-size: 1.1rem;
+                    font-weight: 800;
+                    margin-bottom: 8px;
+                  "
+                >
+                  Assistant thyroïde
+                </h3>
+                <p
+                  style="
+                    font-size: 0.85rem;
+                    opacity: 0.9;
+                    margin-bottom: 20px;
+                    line-height: 1.6;
+                  "
+                >
+                  Vos questions sur le traitement, les résultats de bilan et les symptômes, avec votre dossier en contexte.
+                </p>
+                <div
+                  style="
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    margin-bottom: 20px;
+                  "
+                >
+                  <div
+                    style="
+                      background: rgba(255, 255, 255, 0.15);
+                      border-radius: 8px;
+                      padding: 10px 14px;
+                      font-size: 0.8rem;
+                      cursor: pointer;
+                    "
+                    onclick="window.location.href = '/chat'"
+                  >
+                    "Comment prendre mon Levothyrox ?"
+                  </div>
+                  <div
+                    style="
+                      background: rgba(255, 255, 255, 0.15);
+                      border-radius: 8px;
+                      padding: 10px 14px;
+                      font-size: 0.8rem;
+                      cursor: pointer;
+                    "
+                    onclick="window.location.href = '/chat'"
+                  >
+                    "Que veut dire ma TSH ?"
+                  </div>
+                </div>
+                <button
+                  class="btn"
+                  style="
+                    background: white;
+                    color: var(--primary);
+                    font-weight: 700;
+                  "
+                  onclick="window.location.href = '/chat'"
+                >
+                  💬 Démarrer une conversation
+                </button>
+              </div>
             </div>
           </div>
         </div>
-
-        <!-- Assistant IA -->
-        <div class="card" style="background:linear-gradient(135deg,#1B6CA8,#00BFA5); color:white; border:none;">
-          <div class="card-body" style="padding:28px;">
-            <div style="font-size:40px; margin-bottom:12px;">🤖</div>
-            <h3 style="font-size:1.1rem; font-weight:800; margin-bottom:8px;">Assistant IA post-hospitalisation</h3>
-            <p style="font-size:0.85rem; opacity:0.9; margin-bottom:20px; line-height:1.6;">
-              Posez vos questions sur votre rétablissement, vos médicaments, votre alimentation et bien plus.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px;">
-              <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:10px 14px; font-size:0.8rem; cursor:pointer;" onclick="window.location.href='/chat'">
-                "Quels sont les effets de mes médicaments ?"
-              </div>
-              <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:10px 14px; font-size:0.8rem; cursor:pointer;" onclick="window.location.href='/chat'">
-                "Comment soigner ma cicatrice ?"
-              </div>
-            </div>
-            <button class="btn" style="background:white; color:var(--primary); font-weight:700;" onclick="window.location.href='/chat'">
-              💬 Démarrer une conversation
-            </button>
-          </div>
-        </div>
-
       </div>
-
     </div>
-  </div>
-</div>
 
-<button class="ai-fab" id="aiFab" title="Assistant IA">🤖</button>
-<div class="ai-dialog" id="aiDialog">
-  <div class="ai-dialog-header">
-    <span id="aiDialogTitle">Assistant IA</span>
-    <button class="btn btn-ghost btn-sm" id="aiDialogClose" style="color:white;">✕</button>
-  </div>
-  <div class="ai-dialog-body" id="aiDialogBody"></div>
-  <div class="ai-dialog-input">
-    <input type="text" id="aiDialogInput" placeholder="Posez votre question..." maxlength="700">
-    <button id="aiDialogSend">Envoyer</button>
-  </div>
-</div>
+    <div class="modal-overlay" id="thyroidCheckinModal">
+      <div class="modal" style="max-width: 680px">
+        <div class="modal-header">
+          <div>
+            <h3>🦋 Checking thyroïde</h3>
+            <p class="text-sm text-muted">
+              Quelques questions pour suivre votre état du jour.
+            </p>
+          </div>
+          <button
+            class="modal-close"
+            onclick="closeModal('thyroidCheckinModal')"
+          >
+            ✕
+          </button>
+        </div>
+        <form id="thyroidCheckinForm" novalidate>
+          <div class="modal-body">
+            <div class="alert alert-info" style="margin-bottom: 18px">
+              Ce checking aide votre équipe médicale à suivre votre traitement.
+              Il ne remplace pas une consultation et ne pose pas de diagnostic.
+            </div>
+            <div class="checkin-progress">
+              <span id="thyroidStepLabel">Question 1 sur 5</span>
+              <div><span id="thyroidProgressBar"></span></div>
+            </div>
 
-<script src="/js/app.js"></script>
-<script>
-  requireAuth();
-  initSidebar();
+            <section class="thyroid-step" data-step="1">
+              <h4>Comment vous sentez-vous aujourd’hui ?</h4>
+              <p class="text-muted text-sm">
+                Choisissez la réponse qui correspond le mieux à votre état.
+              </p>
+              <div class="checkin-choice-grid">
+                <label class="checkin-choice"
+                  ><input
+                    type="radio"
+                    name="thyroidOverall"
+                    value="bien"
+                    checked
+                  /><strong>🙂 Plutôt bien</strong
+                  ><span>Pas de gêne particulière</span></label
+                >
+                <label class="checkin-choice"
+                  ><input
+                    type="radio"
+                    name="thyroidOverall"
+                    value="moyen"
+                  /><strong>😐 Moyennement</strong
+                  ><span>Quelques symptômes</span></label
+                >
+                <label class="checkin-choice"
+                  ><input
+                    type="radio"
+                    name="thyroidOverall"
+                    value="mal"
+                  /><strong>😟 Mal</strong><span>État inhabituel</span></label
+                >
+              </div>
+            </section>
 
-  const user = getUser();
-  let doctorPatients = [];
-  let availablePatients = [];
-  let pendingRegistrations = [];
-  let selectedPatientId = null;
-  let aiDialogBusy = false;
+            <section class="thyroid-step hidden" data-step="2">
+              <h4>Quels signes ressentez-vous ?</h4>
+              <p class="text-muted text-sm">
+                Vous pouvez en sélectionner plusieurs.
+              </p>
+              <div class="symptom-chips thyroid-alert-chips">
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="fatigue" hidden /> Fatigue
+                  inhabituelle</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="weightChange" hidden />
+                  Variation de poids</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="heatOrCold" hidden />
+                  Sensibilité chaud/froid</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="tremor" hidden />
+                  Tremblements</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="palpitations" hidden />
+                  Palpitations</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="constipation" hidden />
+                  Constipation</label
+                >
+              </div>
+              <label class="form-group" style="display: block; margin-top: 24px"
+                >Intensité globale (0 à 5)
+                <input
+                  type="range"
+                  id="thyroidSeverity"
+                  min="0"
+                  max="5"
+                  value="0"
+                  style="width: 100%; accent-color: var(--primary)"
+                  oninput="
+                    document.getElementById(
+                      'thyroidSeverityValue',
+                    ).textContent = this.value + '/5'
+                  "
+                /><span id="thyroidSeverityValue" class="text-sm text-muted"
+                  >0/5</span
+                >
+              </label>
+            </section>
 
-  function escapeHTML(value) {
-    return (value || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
+            <section class="thyroid-step hidden" data-step="3">
+              <h4>Avez-vous un signe d’alerte ?</h4>
+              <p class="text-muted text-sm">
+                Si oui, sélectionnez-le. En cas de danger immédiat, appelez le
+                15.
+              </p>
+              <div class="symptom-chips thyroid-alert-chips">
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="chestPain" hidden /> Douleur
+                  thoracique</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="breathlessness" hidden />
+                  Difficulté à respirer</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="fainting" hidden /> Malaise /
+                  perte de connaissance</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="confusion" hidden /> Confusion
+                  inhabituelle</label
+                >
+                <label class="symptom-chip"
+                  ><input type="checkbox" value="severePalpitations" hidden />
+                  Palpitations très fortes</label
+                >
+              </div>
+            </section>
 
-  function addAiDialogMessage(role, text) {
-    const body = document.getElementById('aiDialogBody');
-    const div = document.createElement('div');
-    div.className = `ai-mini-msg ${role === 'user' ? 'user' : 'ai'}`;
-    div.innerHTML = `<div class="ai-mini-bubble ${role === 'ai' ? 'md-content' : ''}">${role === 'ai' ? renderMarkdown(text) : escapeHTML(text)}</div>`;
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
-  }
+            <section class="thyroid-step hidden" data-step="4">
+              <h4>Quelles constantes avez-vous ?</h4>
+              <p class="text-muted text-sm">
+                Laissez vide ce que vous ne connaissez pas. Les résultats de
+                laboratoire sont indicatifs et doivent être interprétés avec
+                votre médecin.
+              </p>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>TSH (mUI/L)</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidTSH"
+                    min="0"
+                    step="0.01"
+                    placeholder="Ex. 2.4"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>T4 libre</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidFreeT4"
+                    min="0"
+                    step="0.01"
+                    placeholder="Selon bilan"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>T3 libre</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidFreeT3"
+                    min="0"
+                    step="0.01"
+                    placeholder="Selon bilan"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Fréquence cardiaque</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidHeartRate"
+                    min="30"
+                    max="250"
+                    placeholder="bpm"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Température</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidTemperature"
+                    min="30"
+                    max="45"
+                    step="0.1"
+                    placeholder="°C"
+                  />
+                </div>
+                <div class="form-group">
+                  <label>Poids</label
+                  ><input
+                    type="number"
+                    class="form-control"
+                    id="thyroidWeight"
+                    min="0"
+                    step="0.1"
+                    placeholder="kg"
+                  />
+                </div>
+              </div>
+            </section>
 
-  function initAiDialog() {
-    const fab = document.getElementById('aiFab');
-    const dialog = document.getElementById('aiDialog');
-    const closeBtn = document.getElementById('aiDialogClose');
-    const sendBtn = document.getElementById('aiDialogSend');
-    const input = document.getElementById('aiDialogInput');
-    const title = document.getElementById('aiDialogTitle');
+            <section class="thyroid-step hidden" data-step="5">
+              <h4>Une précision pour votre médecin ?</h4>
+              <p class="text-muted text-sm">
+                Vous pouvez écrire ou dicter un commentaire sur votre traitement
+                ou votre ressenti.
+              </p>
+              <div class="voice-note-row">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  id="thyroidVoiceBtn"
+                >
+                  🎙️ Répondre à l’oral</button
+                ><span id="thyroidVoiceStatus" class="text-sm text-muted"
+                  >Micro désactivé</span
+                >
+              </div>
+              <textarea
+                class="form-control"
+                id="thyroidNotes"
+                rows="5"
+                maxlength="1000"
+                placeholder="Ex. J’ai pris mon traitement ce matin, mais je ressens..."
+              ></textarea>
+            </section>
 
-    title.textContent = user.role === 'doctor' ? 'Assistant IA médecin' : 'Assistant IA patient';
+            <div id="thyroidCheckinResult" class="hidden"></div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-ghost"
+              onclick="closeModal('thyroidCheckinModal')"
+            >
+              Annuler
+            </button>
+            <div>
+              <button
+                type="button"
+                class="btn btn-outline btn-sm hidden"
+                id="thyroidPrevBtn"
+              >
+                Précédent
+              </button>
+              <button type="button" class="btn btn-primary" id="thyroidNextBtn">
+                Suivant</button
+              ><button
+                type="submit"
+                class="btn btn-primary hidden"
+                id="thyroidCheckinSubmit"
+              >
+                Enregistrer le checking
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
 
-    fab.addEventListener('click', () => {
-      dialog.classList.toggle('open');
-      if (dialog.classList.contains('open')) {
-        input.focus();
-        if (!document.getElementById('aiDialogBody').children.length) {
-          addAiDialogMessage('ai', user.role === 'doctor'
-            ? 'Bonjour Docteur. Je peux vous aider à gérer vos patients, notifications et consultations.'
-            : 'Bonjour. Je peux vous aider pour votre suivi, vos médicaments et vos symptômes.');
+    <!-- Alerte d'urgence : check-in classé "urgent" -->
+    <div class="modal-overlay" id="emergencyModal">
+      <div
+        class="modal emergency-modal"
+        role="alertdialog"
+        aria-labelledby="emgTitle"
+        aria-describedby="emgDesc"
+      >
+        <div class="emergency-head">
+          <span class="emergency-icon" data-icon="alert" data-icon-size="28"></span>
+          <h3 id="emgTitle">Vos symptômes sont très inquiétants</h3>
+          <p id="emgDesc">
+            D'après votre checking, votre état nécessite un avis médical
+            <strong>immédiat</strong>. N'attendez pas, et ne prenez pas le volant.
+          </p>
+        </div>
+
+        <div class="modal-body">
+          <div id="emergencyReasons"></div>
+
+          <div class="emergency-calls">
+            <a class="emg-call urgent" href="tel:15">
+              <span class="num">15</span>
+              <span class="lbl"><strong>SAMU</strong>Urgences médicales</span>
+            </a>
+            <a class="emg-call" href="tel:112">
+              <span class="num">112</span>
+              <span class="lbl"><strong>Urgences européennes</strong>Depuis tout téléphone</span>
+            </a>
+            <a class="emg-call" href="sms:114">
+              <span class="num">114</span>
+              <span class="lbl"><strong>Par SMS</strong>Sourds et malentendants</span>
+            </a>
+          </div>
+
+          <p class="emergency-note">
+            Appels gratuits, 24 h/24. Si vous êtes seul, prévenez aussi un proche.
+            Gardez votre ordonnance à portée de main pour la donner aux secours.
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <a class="btn btn-outline" href="/messages">Prévenir mon médecin</a>
+          <button class="btn btn-danger" onclick="closeModal('emergencyModal')">
+            J'ai compris
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button class="ai-fab" id="aiFab" title="Assistant IA">🤖</button>
+    <div class="ai-dialog" id="aiDialog">
+      <div class="ai-dialog-header">
+        <span id="aiDialogTitle">Assistant IA</span>
+        <button
+          class="btn btn-ghost btn-sm"
+          id="aiDialogClose"
+          style="color: white"
+        >
+          ✕
+        </button>
+      </div>
+      <div class="ai-dialog-body" id="aiDialogBody"></div>
+      <div class="ai-dialog-input">
+        <input
+          type="text"
+          id="aiDialogInput"
+          placeholder="Posez votre question..."
+          maxlength="700"
+        />
+        <button id="aiDialogSend">Envoyer</button>
+      </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+    <script>
+      requireAuth();
+      initSidebar();
+
+      const user = getUser();
+      let doctorPatients = [];
+      let availablePatients = [];
+      let selectedPatientId = null;
+      let aiDialogBusy = false;
+
+      function initThyroidCheckin() {
+        const button = document.getElementById("thyroidCheckinBtn");
+        const form = document.getElementById("thyroidCheckinForm");
+        if (!button || !form) return;
+
+        if (!user || user.role !== "patient") {
+          button.style.display = "none";
+          return;
+        }
+
+        const steps = Array.from(form.querySelectorAll(".thyroid-step"));
+        const stepLabel = document.getElementById("thyroidStepLabel");
+        const progressBar = document.getElementById("thyroidProgressBar");
+        const previousButton = document.getElementById("thyroidPrevBtn");
+        const nextButton = document.getElementById("thyroidNextBtn");
+        const submit = document.getElementById("thyroidCheckinSubmit");
+        const voiceButton = document.getElementById("thyroidVoiceBtn");
+        const voiceStatus = document.getElementById("thyroidVoiceStatus");
+        let currentStep = 0;
+        let recognition = null;
+
+        form.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+          input.addEventListener("change", () => {
+            input
+              .closest(".symptom-chip")
+              .classList.toggle("selected", input.checked);
+          });
+        });
+
+        function renderStep() {
+          steps.forEach((step, index) =>
+            step.classList.toggle("hidden", index !== currentStep),
+          );
+          stepLabel.textContent = `Question ${currentStep + 1} sur ${steps.length}`;
+          progressBar.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+          previousButton.classList.toggle("hidden", currentStep === 0);
+          nextButton.classList.toggle(
+            "hidden",
+            currentStep === steps.length - 1,
+          );
+          submit.classList.toggle("hidden", currentStep !== steps.length - 1);
+        }
+
+        // Le formulaire est en `novalidate` : la validation native bloquait la
+        // soumission en silence quand le champ invalide se trouvait sur une
+        // étape masquée (« An invalid form control is not focusable »).
+        // On la refait ici, en ramenant l'utilisateur sur l'étape fautive.
+        function fieldError(input) {
+          if (input.validity.badInput) {
+            return "Valeur non reconnue. Utilisez un point comme séparateur décimal (ex. 2.5).";
+          }
+          if (input.validity.rangeUnderflow) {
+            return `La valeur doit être supérieure ou égale à ${input.min}.`;
+          }
+          if (input.validity.rangeOverflow) {
+            return `La valeur doit être inférieure ou égale à ${input.max}.`;
+          }
+          if (input.validity.stepMismatch) {
+            return `Valeur trop précise : utilisez un pas de ${input.step}.`;
+          }
+          if (!input.validity.valid) return input.validationMessage;
+          return null;
+        }
+
+        function firstInvalid(scope) {
+          return (
+            Array.from(scope.querySelectorAll("input, select, textarea")).find(
+              (el) => !el.disabled && !el.validity.valid,
+            ) || null
+          );
+        }
+
+        function showFieldError(input, message) {
+          const result = document.getElementById("thyroidCheckinResult");
+          const stepEl = input.closest(".thyroid-step");
+          const index = steps.indexOf(stepEl);
+          if (index >= 0 && index !== currentStep) {
+            currentStep = index;
+            renderStep();
+          }
+          const label =
+            input.closest("label")?.querySelector("span, strong")?.textContent?.trim() ||
+            input.previousElementSibling?.textContent?.trim() ||
+            "";
+          result.className = "alert alert-danger";
+          result.textContent = label ? `${label} : ${message}` : message;
+          input.focus();
+          input.select?.();
+        }
+
+        // Valide l'étape courante ; renvoie false et signale le champ si besoin.
+        function validateCurrentStep() {
+          const invalid = firstInvalid(steps[currentStep]);
+          if (!invalid) return true;
+          showFieldError(invalid, fieldError(invalid));
+          return false;
+        }
+
+        nextButton.addEventListener("click", () => {
+          if (!validateCurrentStep()) return;
+          document.getElementById("thyroidCheckinResult").className = "hidden";
+          if (currentStep < steps.length - 1) {
+            currentStep += 1;
+            renderStep();
+          }
+        });
+        previousButton.addEventListener("click", () => {
+          if (currentStep > 0) {
+            currentStep -= 1;
+            renderStep();
+          }
+        });
+        renderStep();
+
+        if (
+          "SpeechRecognition" in window ||
+          "webkitSpeechRecognition" in window
+        ) {
+          const SpeechRecognition =
+            window.SpeechRecognition || window.webkitSpeechRecognition;
+          recognition = new SpeechRecognition();
+          recognition.lang = "fr-FR";
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+          recognition.onstart = () => {
+            voiceButton.disabled = true;
+            voiceButton.textContent = "⏺️ Écoute...";
+            voiceStatus.textContent = "Parlez maintenant, puis arrêtez-vous.";
+          };
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.trim();
+            const notes = document.getElementById("thyroidNotes");
+            notes.value =
+              `${notes.value ? `${notes.value} ` : ""}${transcript}`.slice(
+                0,
+                1000,
+              );
+            voiceStatus.textContent =
+              "Réponse vocale transcrite et prête à être enregistrée.";
+          };
+          recognition.onerror = () => {
+            voiceStatus.textContent =
+              "Microphone indisponible ou permission refusée.";
+          };
+          recognition.onend = () => {
+            voiceButton.disabled = false;
+            voiceButton.textContent = "🎙️ Répondre à l’oral";
+          };
+          voiceButton.addEventListener("click", () => recognition.start());
+        } else {
+          voiceButton.disabled = true;
+          voiceStatus.textContent =
+            "La dictée vocale n’est pas supportée par ce navigateur.";
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+
+          // Un champ invalide peut se trouver sur une étape déjà masquée :
+          // on y retourne et on explique, au lieu de ne rien faire.
+          const invalid = firstInvalid(form);
+          if (invalid) {
+            showFieldError(invalid, fieldError(invalid));
+            return;
+          }
+
+          const result = document.getElementById("thyroidCheckinResult");
+          const checkedSigns = Array.from(
+            form.querySelectorAll('input[type="checkbox"]:checked'),
+          );
+          const answers = {
+            overall: form.querySelector('input[name="thyroidOverall"]:checked')
+              .value,
+            symptomSeverity: Number(
+              document.getElementById("thyroidSeverity").value,
+            ),
+            signs: checkedSigns.map((input) => input.value),
+            chestPain: checkedSigns.some(
+              (input) => input.value === "chestPain",
+            ),
+            breathlessness: checkedSigns.some(
+              (input) => input.value === "breathlessness",
+            ),
+            fainting: checkedSigns.some((input) => input.value === "fainting"),
+            confusion: checkedSigns.some(
+              (input) => input.value === "confusion",
+            ),
+            severePalpitations: checkedSigns.some(
+              (input) => input.value === "severePalpitations",
+            ),
+            notes: document.getElementById("thyroidNotes").value.trim(),
+          };
+          const measurements = {
+            tsh: document.getElementById("thyroidTSH").value,
+            freeT4: document.getElementById("thyroidFreeT4").value,
+            freeT3: document.getElementById("thyroidFreeT3").value,
+            heartRate: document.getElementById("thyroidHeartRate").value,
+            temperature: document.getElementById("thyroidTemperature").value,
+            weight: document.getElementById("thyroidWeight").value,
+          };
+
+          submit.disabled = true;
+          submit.textContent = "Enregistrement...";
+          result.className = "hidden";
+          try {
+            const data = await apiFetch("/thyroid-checkins", {
+              method: "POST",
+              body: JSON.stringify({ answers, measurements }),
+            });
+            const labels = {
+              normal: "Normal",
+              surveillance: "Surveillance",
+              important: "Important",
+              urgent: "Urgent",
+            };
+            const category = data.checkin.category;
+            result.className = `alert alert-${category === "normal" ? "success" : category === "surveillance" ? "warning" : "danger"}`;
+            result.innerHTML = `<strong>Résultat : ${labels[category]}</strong><br>${escapeHTML(data.checkin.reasons.join(" "))}${data.doctorAlertCreated ? "<br>Une alerte a été ajoutée au dossier de votre médecin." : ""}`;
+            showToast(
+              "Checking thyroïde enregistré.",
+              category === "normal" ? "success" : "warning",
+            );
+            closeModal("thyroidCheckinModal");
+            form.reset();
+            document.getElementById("thyroidSeverityValue").textContent = "0/5";
+            form
+              .querySelectorAll(".symptom-chip.selected")
+              .forEach((chip) => chip.classList.remove("selected"));
+            currentStep = 0;
+            renderStep();
+
+            // Le checking est classé urgent : on bloque l'écran avec les
+            // numéros d'urgence plutôt qu'une simple ligne de texte dans une
+            // modale qu'on vient de refermer.
+            if (category === "urgent") {
+              openEmergencyModal(data.checkin.reasons);
+            }
+          } catch (error) {
+            result.className = "alert alert-danger";
+            result.textContent = error.message;
+          } finally {
+            submit.disabled = false;
+            submit.textContent = "Enregistrer le checking";
+          }
+        });
+      }
+
+      function escapeHTML(value) {
+        return (value || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function addAiDialogMessage(role, text) {
+        const body = document.getElementById("aiDialogBody");
+        const div = document.createElement("div");
+        div.className = `ai-mini-msg ${role === "user" ? "user" : "ai"}`;
+        div.innerHTML = `<div class="ai-mini-bubble ${role === "ai" ? "md-content" : ""}">${role === "ai" ? renderMarkdown(text) : escapeHTML(text)}</div>`;
+        body.appendChild(div);
+        body.scrollTop = body.scrollHeight;
+      }
+
+      function initAiDialog() {
+        const fab = document.getElementById("aiFab");
+        const dialog = document.getElementById("aiDialog");
+        const closeBtn = document.getElementById("aiDialogClose");
+        const sendBtn = document.getElementById("aiDialogSend");
+        const input = document.getElementById("aiDialogInput");
+        const title = document.getElementById("aiDialogTitle");
+
+        title.textContent =
+          user.role === "doctor"
+            ? "Assistant IA médecin"
+            : "Assistant IA patient";
+
+        fab.addEventListener("click", () => {
+          dialog.classList.toggle("open");
+          if (dialog.classList.contains("open")) {
+            input.focus();
+            if (!document.getElementById("aiDialogBody").children.length) {
+              addAiDialogMessage(
+                "ai",
+                user.role === "doctor"
+                  ? "Bonjour Docteur. Je peux vous aider à gérer vos patients, notifications et consultations."
+                  : "Bonjour. Je peux vous aider pour votre suivi, vos médicaments et vos symptômes.",
+              );
+            }
+          }
+        });
+
+        closeBtn.addEventListener("click", () =>
+          dialog.classList.remove("open"),
+        );
+        sendBtn.addEventListener("click", sendAiDialogMessage);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            sendAiDialogMessage();
+          }
+        });
+      }
+
+      async function sendAiDialogMessage() {
+        if (aiDialogBusy) return;
+        const input = document.getElementById("aiDialogInput");
+        const text = input.value.trim();
+        if (!text) return;
+
+        aiDialogBusy = true;
+        input.value = "";
+        addAiDialogMessage("user", text);
+
+        try {
+          const data = await apiFetch("/chat/send", {
+            method: "POST",
+            body: JSON.stringify({ content: text }),
+          });
+          addAiDialogMessage(
+            "ai",
+            data.aiResponse.message ||
+              data.aiResponse.content ||
+              "Réponse indisponible",
+          );
+        } catch (err) {
+          addAiDialogMessage(
+            "ai",
+            "Erreur lors de la réponse IA. Veuillez réessayer.",
+          );
+        } finally {
+          aiDialogBusy = false;
         }
       }
-    });
 
-    closeBtn.addEventListener('click', () => dialog.classList.remove('open'));
-    sendBtn.addEventListener('click', sendAiDialogMessage);
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        sendAiDialogMessage();
+      function getSymptomVitals(symptom) {
+        if (!symptom) return {};
+        if (symptom.vitals && typeof symptom.vitals === "object")
+          return symptom.vitals;
+        return {
+          heartRate: symptom.heartRate,
+          bloodPressure: symptom.bloodPressure,
+          temperature: symptom.temperature,
+          oxygenSaturation: symptom.oxygenSaturation,
+        };
       }
-    });
-  }
 
-  async function sendAiDialogMessage() {
-    if (aiDialogBusy) return;
-    const input = document.getElementById('aiDialogInput');
-    const text = input.value.trim();
-    if (!text) return;
+      function setupDoctorSidebar() {
+        const nav = document.querySelector(".sidebar-nav");
+        if (!nav) return;
 
-    aiDialogBusy = true;
-    input.value = '';
-    addAiDialogMessage('user', text);
-
-    try {
-      const data = await apiFetch('/chat/send', {
-        method: 'POST',
-        body: JSON.stringify({ content: text })
-      });
-      addAiDialogMessage('ai', data.aiResponse.message || data.aiResponse.content || 'Réponse indisponible');
-    } catch (err) {
-      addAiDialogMessage('ai', 'Erreur lors de la réponse IA. Veuillez réessayer.');
-    } finally {
-      aiDialogBusy = false;
-    }
-  }
-
-  function getSymptomVitals(symptom) {
-    if (!symptom) return {};
-    if (symptom.vitals && typeof symptom.vitals === 'object') return symptom.vitals;
-    return {
-      heartRate: symptom.heartRate,
-      bloodPressure: symptom.bloodPressure,
-      temperature: symptom.temperature,
-      oxygenSaturation: symptom.oxygenSaturation
-    };
-  }
-
-  function setupDoctorSidebar() {
-    const nav = document.querySelector('.sidebar-nav');
-    if (!nav) return;
-
-    nav.innerHTML = `
+        nav.innerHTML = `
       <span class="nav-section-label">Médecin</span>
       <div class="nav-link active" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
       <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
       <span class="nav-section-label">Dossier</span>
       <div class="nav-link" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
     `;
-    initSidebar();
-  }
+        initSidebar();
+      }
 
-  function renderDoctorLayout() {
-    const page = document.querySelector('.page-content');
-    page.innerHTML = `
+      function renderDoctorLayout() {
+        const page = document.querySelector(".page-content");
+        page.innerHTML = `
       <div class="stats-grid" id="doctorStatsGrid">
-        <div class="stat-card">
-          <div class="stat-icon blue">🧑‍🤝‍🧑</div>
+        <div class="stat-card is-clickable" role="link" tabindex="0" onclick="toggleDoctorTab('patients')">
+          <div class="stat-icon blue" data-icon="users" data-icon-size="22"></div>
           <div class="stat-info">
             <h3 id="docStatPatients">-</h3>
             <p>Mes patients</p>
             <span class="stat-change neutral">suivis actuellement</span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon green">📅</div>
+        <div class="stat-card is-clickable" role="link" tabindex="0" onclick="toggleDoctorTab('appts')">
+          <div class="stat-icon green" data-icon="calendar" data-icon-size="22"></div>
           <div class="stat-info">
             <h3 id="docStatApts">-</h3>
             <p>Rendez-vous patients</p>
             <span class="stat-change neutral">à venir</span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon red">🚨</div>
+        <div class="stat-card is-clickable" role="link" tabindex="0" onclick="toggleDoctorTab('alerts')">
+          <div class="stat-icon red" data-icon="alert" data-icon-size="22"></div>
           <div class="stat-info">
             <h3 id="docStatAlerts">-</h3>
-            <p>Inscriptions en attente</p>
-            <span class="stat-change neutral">à valider</span>
+            <p>Alertes non lues</p>
+            <span class="stat-change neutral">sur vos patients</span>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon orange">📁</div>
+        <div class="stat-card is-clickable" role="link" tabindex="0" onclick="toggleDoctorTab('docs')">
+          <div class="stat-icon orange" data-icon="folder" data-icon-size="22"></div>
           <div class="stat-info">
             <h3 id="docStatDocs">-</h3>
             <p>Documents</p>
@@ -486,9 +1494,22 @@
       </div>
 
       <div class="card" style="margin-bottom:16px;">
+        <div class="card-header">
+          <span class="card-title"><span data-icon="alert" data-icon-size="16"></span>Cas urgents et importants</span>
+          <span id="kpiPriorityCounts" class="text-sm" style="color:var(--text-muted);"></span>
+        </div>
+        <div class="card-body">
+          <div id="kpiPriorityList"><p class="text-sm">Chargement…</p></div>
+          <div id="kpiContext" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
         <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="tabPatientsBtn">Mes patients</button>
-          <button class="btn btn-outline" id="tabPendingBtn">Inscriptions en attente</button>
+          <button class="btn btn-outline" id="tabApptsBtn">📅 Rendez-vous</button>
+          <button class="btn btn-outline" id="tabAlertsBtn">🚨 Alertes</button>
+          <button class="btn btn-outline" id="tabDocsBtn">📁 Documents</button>
           <button class="btn btn-outline" id="tabPatientDetailsBtn">Détails patient</button>
         </div>
       </div>
@@ -509,20 +1530,13 @@
         </div>
       </div>
 
-      <div id="doctorPendingTab" class="dashboard-grid" style="display:none;">
-        <div class="card" style="grid-column:1 / -1;">
-          <div class="card-header">
-            <span class="card-title">🕒 Inscriptions patients en attente</span>
-          </div>
-          <div class="card-body" id="doctorPendingPatientsList"></div>
-        </div>
-      </div>
-
       <div id="doctorPatientDetailsTab" class="dashboard-grid" style="display:none;">
         <div class="card" style="grid-column:1 / -1;">
           <div class="card-header">
             <span class="card-title">📋 Informations médicales du patient</span>
             <div class="flex gap-2">
+              <button class="btn btn-ghost btn-sm" id="doctorMessageBtn"><span data-icon="message" data-icon-size="15"></span>Message</button>
+              <button class="btn btn-outline btn-sm" id="doctorSendDocBtn"><span data-icon="paperclip" data-icon-size="15"></span>Envoyer un document</button>
               <button class="btn btn-outline btn-sm" id="doctorNotifyBtn">Envoyer notification</button>
               <button class="btn btn-primary btn-sm" id="doctorCreateAptBtn">Ajouter rendez-vous</button>
             </div>
@@ -536,102 +1550,577 @@
           </div>
         </div>
       </div>
+
+      <div id="doctorApptsTab" style="display:none;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📅 Rendez-vous à venir de vos patients</span></div>
+          <div class="card-body" id="doctorApptsList"><p class="text-sm">Chargement…</p></div>
+        </div>
+      </div>
+
+      <div id="doctorAlertsTab" style="display:none;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🚨 Alertes non lues sur vos patients</span></div>
+          <div class="card-body" id="doctorAlertsList"><p class="text-sm">Chargement…</p></div>
+        </div>
+      </div>
+
+      <div id="doctorDocsTab" style="display:none;">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📁 Documents partagés par vos patients</span></div>
+          <div class="card-body" id="doctorDocsList"><p class="text-sm">Chargement…</p></div>
+        </div>
+      </div>
     `;
 
-    document.getElementById('tabPatientsBtn').addEventListener('click', () => toggleDoctorTab('patients'));
-    document.getElementById('tabPendingBtn').addEventListener('click', () => toggleDoctorTab('pending'));
-    document.getElementById('tabPatientDetailsBtn').addEventListener('click', () => toggleDoctorTab('details'));
-    document.getElementById('doctorNotifyBtn').addEventListener('click', sendDoctorNotification);
-    document.getElementById('doctorCreateAptBtn').addEventListener('click', createDoctorAppointment);
-  }
+        document
+          .getElementById("tabPatientsBtn")
+          .addEventListener("click", () => toggleDoctorTab("patients"));
+        document
+          .getElementById("tabApptsBtn")
+          .addEventListener("click", () => toggleDoctorTab("appts"));
+        document
+          .getElementById("tabAlertsBtn")
+          .addEventListener("click", () => toggleDoctorTab("alerts"));
+        document
+          .getElementById("tabDocsBtn")
+          .addEventListener("click", () => toggleDoctorTab("docs"));
+        document
+          .getElementById("tabPatientDetailsBtn")
+          .addEventListener("click", () => toggleDoctorTab("details"));
+        document
+          .getElementById("doctorNotifyBtn")
+          .addEventListener("click", sendDoctorNotification);
+        document
+          .getElementById("doctorCreateAptBtn")
+          .addEventListener("click", createDoctorAppointment);
+        document
+          .getElementById("doctorMessageBtn")
+          .addEventListener("click", () => {
+            if (!selectedPatientId) {
+              showToast("Sélectionnez un patient d'abord.", "warning");
+              return;
+            }
+            window.location.href =
+              "/messages?patientId=" + encodeURIComponent(selectedPatientId);
+          });
+        document
+          .getElementById("doctorSendDocBtn")
+          .addEventListener("click", () => {
+            if (!selectedPatientId) {
+              showToast("Sélectionnez un patient d'abord.", "warning");
+              return;
+            }
+            document.getElementById("doctorDocUploadRow").hidden =
+              !document.getElementById("doctorDocUploadRow").hidden;
+          });
+      }
 
-  function toggleDoctorTab(tab) {
-    const patientsTab = document.getElementById('doctorPatientsTab');
-    const pendingTab = document.getElementById('doctorPendingTab');
-    const detailsTab = document.getElementById('doctorPatientDetailsTab');
-    const patientsBtn = document.getElementById('tabPatientsBtn');
-    const pendingBtn = document.getElementById('tabPendingBtn');
-    const detailsBtn = document.getElementById('tabPatientDetailsBtn');
+      async function submitDoctorDocument(patientId) {
+        const fileInput = document.getElementById("doctorDocFile");
+        const file = fileInput.files[0];
+        if (!file) {
+          showToast("Choisissez un fichier.", "warning");
+          return;
+        }
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("name", document.getElementById("doctorDocName").value.trim());
+        fd.append("type", document.getElementById("doctorDocType").value);
+        fd.append("visibility", "shared");
+        const btn = document.getElementById("doctorDocSubmit");
+        btn.disabled = true;
+        btn.textContent = "Envoi…";
+        try {
+          const res = await fetch("/api/documents", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${getToken()}` },
+            body: (fd.append("patientId", patientId), fd),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Envoi impossible");
+          showToast("Document envoyé au patient.");
+          await openDoctorPatientDetails(patientId);
+        } catch (err) {
+          showToast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Envoyer au dossier du patient";
+        }
+      }
 
-    const showPatients = tab === 'patients';
-    const showPending = tab === 'pending';
-    const showDetails = tab === 'details';
+      const DOCTOR_TABS = {
+        patients: { tab: "doctorPatientsTab", btn: "tabPatientsBtn", display: "grid" },
+        appts: { tab: "doctorApptsTab", btn: "tabApptsBtn", display: "block", load: () => loadDoctorAggregate("appts") },
+        alerts: { tab: "doctorAlertsTab", btn: "tabAlertsBtn", display: "block", load: () => loadDoctorAggregate("alerts") },
+        docs: { tab: "doctorDocsTab", btn: "tabDocsBtn", display: "block", load: () => loadDoctorAggregate("docs") },
+        details: { tab: "doctorPatientDetailsTab", btn: "tabPatientDetailsBtn", display: "grid" },
+      };
 
-    patientsTab.style.display = showPatients ? 'grid' : 'none';
-    pendingTab.style.display = showPending ? 'grid' : 'none';
-    detailsTab.style.display = showDetails ? 'grid' : 'none';
+      function toggleDoctorTab(tab) {
+        Object.entries(DOCTOR_TABS).forEach(([key, cfg]) => {
+          const el = document.getElementById(cfg.tab);
+          const btn = document.getElementById(cfg.btn);
+          const active = key === tab;
+          if (el) el.style.display = active ? cfg.display : "none";
+          if (btn) btn.className = active ? "btn btn-primary" : "btn btn-outline";
+        });
+        const cfg = DOCTOR_TABS[tab];
+        if (cfg && cfg.load) cfg.load();
+      }
 
-    patientsBtn.className = showPatients ? 'btn btn-primary' : 'btn btn-outline';
-    pendingBtn.className = showPending ? 'btn btn-primary' : 'btn btn-outline';
-    detailsBtn.className = showDetails ? 'btn btn-primary' : 'btn btn-outline';
-  }
+      async function loadDoctorAggregate(kind) {
+        const cfg = {
+          appts: { url: "/doctors/me/appointments", list: "doctorApptsList", empty: "Aucun rendez-vous à venir.", render: renderDoctorApptRow },
+          alerts: { url: "/doctors/me/alerts", list: "doctorAlertsList", empty: "Aucune alerte non lue. 🎉", render: renderDoctorAlertRow },
+          docs: { url: "/doctors/me/documents", list: "doctorDocsList", empty: "Aucun document partagé.", render: renderDoctorDocRow },
+        }[kind];
+        const container = document.getElementById(cfg.list);
+        container.innerHTML = '<p class="text-sm">Chargement…</p>';
+        try {
+          const items = await apiFetch(cfg.url);
+          if (kind === "alerts") {
+            doctorAlertsCache = items;
+            renderDoctorAlerts();
+            return;
+          }
+          container.innerHTML = items.length
+            ? items.map(cfg.render).join("")
+            : `<div class="empty-state"><div class="empty-state-icon">✅</div><h3>${cfg.empty}</h3></div>`;
+        } catch (err) {
+          container.innerHTML = `<p class="text-sm" style="color:var(--danger);">${err.message || "Erreur de chargement."}</p>`;
+        }
+      }
 
-  async function loadDoctorDashboard() {
-    setupDoctorSidebar();
-    renderDoctorLayout();
+      // --- Filtre des alertes ---
+      let doctorAlertsCache = [];
+      const doctorAlertFilter = { patient: "all", severity: "all", q: "" };
 
-    document.getElementById('welcomeSub').textContent = 'Vue médicale de vos patients';
-    const overview = await apiFetch('/doctors/me/overview');
-    const [myPatients, freePatients, pendingPatients] = await Promise.all([
-      apiFetch('/doctors/me/patients'),
-      apiFetch('/doctors/me/patients/available'),
-      apiFetch('/doctors/me/patient-registrations/pending')
-    ]);
-    doctorPatients = myPatients;
-    availablePatients = freePatients;
-    pendingRegistrations = pendingPatients;
+      function alertSeverity(alert) {
+        const t = (alert.title || "").toLowerCase();
+        if (t.includes("urgent")) return "urgent";
+        if (t.includes("important")) return "important";
+        if (t.includes("surveillance")) return "surveillance";
+        if (t.includes("apple watch")) return "applewatch";
+        return "autre";
+      }
 
-    document.getElementById('docStatPatients').textContent = overview.patientCount;
-    document.getElementById('docStatApts').textContent = overview.upcomingAppointments;
-    document.getElementById('docStatAlerts').textContent = pendingRegistrations.length;
-    document.getElementById('docStatDocs').textContent = overview.recentDocuments;
+      const SEVERITY_META = {
+        all: { label: "Toutes" },
+        urgent: { label: "🔴 Urgent" },
+        important: { label: "🟠 Important" },
+        surveillance: { label: "🟡 Surveillance" },
+        applewatch: { label: "⌚ Apple Watch" },
+      };
 
-    renderDoctorPatientsList();
-    renderDoctorAvailablePatientsList();
-    renderDoctorPendingRegistrations();
-  }
+      function setAlertFilter(key, value) {
+        doctorAlertFilter[key] = value;
+        if (key === "q") {
+          renderAlertRows();
+        } else {
+          renderDoctorAlerts();
+        }
+      }
+      window.setAlertFilter = setAlertFilter;
 
-  function renderDoctorPatientsList() {
-    const container = document.getElementById('doctorPatientsList');
-    if (!doctorPatients.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🧑‍🤝‍🧑</div><h3>Aucun patient attribué</h3><p>Ajoutez ou assignez des patients pour commencer.</p></div>`;
-      return;
-    }
+      function filteredAlerts() {
+        const q = doctorAlertFilter.q.trim().toLowerCase();
+        return doctorAlertsCache.filter((a) => {
+          if (doctorAlertFilter.patient !== "all" && a.patientId !== doctorAlertFilter.patient) return false;
+          if (doctorAlertFilter.severity !== "all" && alertSeverity(a) !== doctorAlertFilter.severity) return false;
+          if (q && !`${a.title} ${a.message || ""} ${a.patientName}`.toLowerCase().includes(q)) return false;
+          return true;
+        });
+      }
 
-    container.innerHTML = `
+      function renderAlertRows() {
+        const rows = document.getElementById("doctorAlertsRows");
+        if (!rows) return;
+        const filtered = filteredAlerts();
+        rows.innerHTML = filtered.length
+          ? filtered.map(renderDoctorAlertRow).join("")
+          : `<div class="empty-state"><div class="empty-state-icon">✅</div><h3>${doctorAlertsCache.length ? "Aucune alerte pour ce filtre" : "Aucune alerte non lue. 🎉"}</h3></div>`;
+      }
+
+      function renderDoctorAlerts() {
+        const container = document.getElementById("doctorAlertsList");
+        if (!container) return;
+
+        const counts = { all: doctorAlertsCache.length };
+        doctorAlertsCache.forEach((a) => {
+          const s = alertSeverity(a);
+          counts[s] = (counts[s] || 0) + 1;
+        });
+
+        const chips = Object.keys(SEVERITY_META)
+          .filter((k) => k === "all" || counts[k])
+          .map(
+            (k) => `<button class="btn btn-sm ${doctorAlertFilter.severity === k ? "btn-primary" : "btn-outline"}"
+              onclick="setAlertFilter('severity','${k}')">${SEVERITY_META[k].label}${k !== "all" && counts[k] ? ` (${counts[k]})` : ""}</button>`,
+          )
+          .join("");
+
+        const patients = [
+          ...new Map(doctorAlertsCache.map((a) => [a.patientId, a.patientName])).entries(),
+        ];
+        const patientOptions = [
+          `<option value="all">Tous les patients</option>`,
+          ...patients.map(
+            ([id, name]) =>
+              `<option value="${id}" ${doctorAlertFilter.patient === id ? "selected" : ""}>${name}</option>`,
+          ),
+        ].join("");
+
+        container.innerHTML = `
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px;">
+            ${chips}
+            <select class="form-control" style="width:auto; font-size:0.8rem; padding:6px 10px;"
+              onchange="setAlertFilter('patient', this.value)">${patientOptions}</select>
+            <input class="form-control" id="doctorAlertSearch" style="width:auto; flex:1; min-width:140px; font-size:0.8rem; padding:6px 10px;"
+              placeholder="Rechercher…" value="${doctorAlertFilter.q.replace(/"/g, "&quot;")}"
+              oninput="setAlertFilter('q', this.value)">
+          </div>
+          <div id="doctorAlertsRows"></div>`;
+        renderAlertRows();
+        const search = document.getElementById("doctorAlertSearch");
+        if (search && doctorAlertFilter.q) {
+          search.focus();
+          search.setSelectionRange(search.value.length, search.value.length);
+        }
+      }
+
+      function rowWrap(inner) {
+        return `<div style="display:flex; align-items:center; gap:10px; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--surface-3);">${inner}</div>`;
+      }
+
+      function renderDoctorApptRow(a) {
+        return rowWrap(`
+          <div style="min-width:0;">
+            <div class="text-sm" style="font-weight:600;">${a.title}</div>
+            <div class="text-sm" style="color:var(--text-muted);">👤 ${a.patientName} · ${formatDate(a.date)}${a.time ? " " + a.time : ""}${a.location ? " · " + a.location : ""}</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="openDoctorPatientDetails('${a.patientId}')">Dossier</button>`);
+      }
+
+      function renderDoctorAlertRow(n) {
+        return rowWrap(`
+          <div style="min-width:0;">
+            <div class="text-sm" style="font-weight:600; color:var(--danger);">${n.title}</div>
+            <div class="text-sm" style="color:var(--text-muted);">👤 ${n.patientName} · ${formatDate(n.timestamp)}</div>
+            ${n.message ? `<div class="text-sm" style="color:var(--text-secondary);">${n.message}</div>` : ""}
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="openDoctorPatientDetails('${n.patientId}')">Dossier</button>`);
+      }
+
+      function renderDoctorDocRow(d) {
+        return rowWrap(`
+          <div style="min-width:0;">
+            <div class="text-sm" style="font-weight:600;">📄 ${d.name}${d.uploadedByRole === "doctor" ? ' <span style="color:var(--primary); font-size:0.7rem;">(envoyé par vous)</span>' : ""}</div>
+            <div class="text-sm" style="color:var(--text-muted);">👤 ${d.patientName} · ${formatDate(d.uploadDate)}${d.description ? " · " + d.description : ""}</div>
+          </div>
+          <span style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn btn-outline btn-sm" onclick="downloadDoctorDoc('${d.id}', true)" aria-label="Ouvrir"><span data-icon="eye" data-icon-size="15"></span></button>
+            <button class="btn btn-primary btn-sm" onclick="downloadDoctorDoc('${d.id}', false)" aria-label="Télécharger"><span data-icon="download" data-icon-size="15"></span></button>
+          </span>`);
+      }
+
+      async function loadDoctorDashboard() {
+        setupDoctorSidebar();
+        renderDoctorLayout();
+
+        document.getElementById("welcomeSub").textContent =
+          "Vue médicale de vos patients";
+        const overview = await apiFetch("/doctors/me/overview");
+        const [myPatients, freePatients] = await Promise.all([
+          apiFetch("/doctors/me/patients"),
+          apiFetch("/doctors/me/patients/available"),
+        ]);
+        doctorPatients = myPatients;
+        availablePatients = freePatients;
+
+        document.getElementById("docStatPatients").textContent =
+          overview.patientCount;
+        document.getElementById("docStatApts").textContent =
+          overview.upcomingAppointments;
+        document.getElementById("docStatAlerts").textContent =
+          overview.alertsCount;
+        document.getElementById("docStatDocs").textContent =
+          overview.recentDocuments;
+
+        renderDoctorPatientsList();
+        renderDoctorAvailablePatientsList();
+        renderDoctorKpi();
+      }
+
+      // ===== Graphiques médecin (SVG inline, sans dépendance) =====
+      const CHART_COLORS = {
+        tsh: "#6C5CE7",
+        weight: "#00B894",
+        hr: "#E17055",
+        normal: "#22C55E",
+        surveillance: "#F59E0B",
+        important: "#F97316",
+        urgent: "#EF4444",
+        none: "#94A3B8",
+      };
+      const CAT_LABEL = {
+        normal: "Normal",
+        surveillance: "Surveillance",
+        important: "Important",
+        urgent: "Urgent",
+        none: "Aucun check-in",
+      };
+
+      function svgLine(points, opts) {
+        const o = Object.assign(
+          { w: 520, h: 150, pad: { t: 10, r: 12, b: 22, l: 40 }, color: "#6C5CE7", unit: "", band: null },
+          opts || {},
+        );
+        const pts = points.filter((p) => p.v != null && !Number.isNaN(p.v));
+        if (pts.length < 2) {
+          return `<p class="text-sm" style="color:var(--text-muted); padding:14px 0;">Pas assez de mesures pour tracer une courbe.</p>`;
+        }
+        const xs = pts.map((p) => +new Date(p.t));
+        const ys = pts.map((p) => p.v);
+        let minX = Math.min(...xs),
+          maxX = Math.max(...xs);
+        let minY = Math.min(...ys),
+          maxY = Math.max(...ys);
+        if (o.band) {
+          minY = Math.min(minY, o.band.min);
+          maxY = Math.max(maxY, o.band.max);
+        }
+        const spanY = maxY - minY || 1;
+        minY -= spanY * 0.12;
+        maxY += spanY * 0.12;
+        if (maxX === minX) maxX = minX + 1;
+        const iw = o.w - o.pad.l - o.pad.r;
+        const ih = o.h - o.pad.t - o.pad.b;
+        const sx = (x) => o.pad.l + ((x - minX) / (maxX - minX)) * iw;
+        const sy = (y) => o.pad.t + ih - ((y - minY) / (maxY - minY)) * ih;
+        const d = pts.map((p, i) => `${i ? "L" : "M"}${sx(+new Date(p.t)).toFixed(1)},${sy(p.v).toFixed(1)}`).join(" ");
+        const dots = pts
+          .map(
+            (p) =>
+              `<circle cx="${sx(+new Date(p.t)).toFixed(1)}" cy="${sy(p.v).toFixed(1)}" r="3" fill="${o.color}"><title>${new Date(p.t).toLocaleDateString("fr-FR")} : ${p.v}${o.unit}</title></circle>`,
+          )
+          .join("");
+        const band = o.band
+          ? `<rect x="${o.pad.l}" y="${sy(o.band.max).toFixed(1)}" width="${iw}" height="${(sy(o.band.min) - sy(o.band.max)).toFixed(1)}" fill="rgba(34,197,94,0.13)"/>
+             <line x1="${o.pad.l}" x2="${o.w - o.pad.r}" y1="${sy(o.band.max).toFixed(1)}" y2="${sy(o.band.max).toFixed(1)}" stroke="rgba(34,197,94,0.5)" stroke-dasharray="3 3"/>
+             <line x1="${o.pad.l}" x2="${o.w - o.pad.r}" y1="${sy(o.band.min).toFixed(1)}" y2="${sy(o.band.min).toFixed(1)}" stroke="rgba(34,197,94,0.5)" stroke-dasharray="3 3"/>`
+          : "";
+        const fmtV = (v) => (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(1));
+        return `<svg viewBox="0 0 ${o.w} ${o.h}" role="img">
+          <line x1="${o.pad.l}" y1="${o.pad.t}" x2="${o.pad.l}" y2="${o.pad.t + ih}" stroke="var(--border)"/>
+          <line x1="${o.pad.l}" y1="${o.pad.t + ih}" x2="${o.w - o.pad.r}" y2="${o.pad.t + ih}" stroke="var(--border)"/>
+          ${band}
+          <text x="${o.pad.l - 6}" y="${(o.pad.t + 4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${fmtV(maxY)}</text>
+          <text x="${o.pad.l - 6}" y="${(o.pad.t + ih).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-muted)">${fmtV(minY)}</text>
+          <text x="${o.pad.l}" y="${o.h - 6}" font-size="9" fill="var(--text-muted)">${new Date(minX).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}</text>
+          <text x="${o.w - o.pad.r}" y="${o.h - 6}" text-anchor="end" font-size="9" fill="var(--text-muted)">${new Date(maxX).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}</text>
+          <path d="${d}" fill="none" stroke="${o.color}" stroke-width="2" stroke-linejoin="round"/>
+          ${dots}
+        </svg>`;
+      }
+
+      function daysAgoLabel(dateStr) {
+        if (!dateStr) return "—";
+        const days = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
+        if (days <= 0) return "aujourd'hui";
+        if (days === 1) return "hier";
+        return `il y a ${days} j`;
+      }
+
+      async function renderDoctorKpi() {
+        const listEl = document.getElementById("kpiPriorityList");
+        const ctxEl = document.getElementById("kpiContext");
+        const countEl = document.getElementById("kpiPriorityCounts");
+        try {
+          const kpi = await apiFetch("/doctors/me/kpi");
+          const cases = kpi.priorityCases || [];
+          const pc = kpi.priorityCounts || { urgent: 0, important: 0 };
+
+          countEl.innerHTML = cases.length
+            ? `${pc.urgent ? `<span style="color:#ef4444; font-weight:700;">${pc.urgent} urgent${pc.urgent > 1 ? "s" : ""}</span>` : ""}${pc.urgent && pc.important ? " · " : ""}${pc.important ? `<span style="color:#f97316; font-weight:700;">${pc.important} important${pc.important > 1 ? "s" : ""}</span>` : ""}`
+            : "";
+
+          if (!cases.length) {
+            listEl.innerHTML = `<div class="empty-state" style="padding:20px 0;">
+              <div class="empty-state-icon" data-icon="check" data-icon-size="30"></div>
+              <h3>Aucun cas urgent ou important</h3>
+              <p class="text-sm">Le dernier check-in de chacun de vos patients est normal ou en simple surveillance.</p>
+            </div>`;
+          } else {
+            listEl.innerHTML = cases
+              .map((c) => {
+                const sev = c.category === "urgent" ? "URGENT" : "IMPORTANT";
+                const meta = [
+                  c.tsh != null ? `TSH ${c.tsh}` : null,
+                  c.freeT4 != null ? `T4L ${c.freeT4}` : null,
+                  c.heartRate != null ? `FC ${c.heartRate}` : null,
+                  `check-in ${daysAgoLabel(c.checkedAt)}`,
+                  c.unreadAlerts ? `${c.unreadAlerts} alerte${c.unreadAlerts > 1 ? "s" : ""} non lue${c.unreadAlerts > 1 ? "s" : ""}` : null,
+                ].filter(Boolean).join(" · ");
+                return `<div class="prio-item ${c.category}">
+                  <div class="prio-sev">
+                    <span class="tag">${sev}</span>
+                    <span class="score">${c.riskScore ?? "–"}<small>score</small></span>
+                  </div>
+                  <div class="prio-main">
+                    <h4>${c.name}</h4>
+                    ${c.diagnosis ? `<div class="diag">${c.diagnosis}</div>` : ""}
+                    <div class="reason">${(c.reasons || []).slice(0, 2).join(" ")}</div>
+                    <div class="meta">${meta}</div>
+                  </div>
+                  <div class="prio-actions">
+                    <button class="btn btn-primary btn-sm" onclick="openDoctorPatientDetails('${c.patientId}')">Ouvrir le dossier</button>
+                    <button class="btn btn-outline btn-sm" onclick="window.location.href='/messages?patientId=${c.patientId}'">Message</button>
+                  </div>
+                </div>`;
+              })
+              .join("");
+          }
+
+          // Contexte compact : répartition + TSH hors cible
+          const dist = kpi.categoryDistribution || {};
+          const total = Object.values(dist).reduce((a, b) => a + b, 0) || 1;
+          const order = ["urgent", "important", "surveillance", "normal", "none"];
+          const strip = order
+            .filter((k) => dist[k])
+            .map((k) => `<div style="width:${((dist[k] / total) * 100).toFixed(1)}%; background:${CHART_COLORS[k]};" title="${CAT_LABEL[k]} : ${dist[k]}"></div>`)
+            .join("");
+          const legend = order
+            .filter((k) => dist[k])
+            .map((k) => `<span><i style="background:${CHART_COLORS[k]}"></i>${CAT_LABEL[k]} ${dist[k]}</span>`)
+            .join("");
+          const offTarget = (kpi.patientsTsh || []).filter((p) => p.tsh != null && p.inRange === false);
+          ctxEl.innerHTML = `
+            <div style="font-size:0.72rem; color:var(--text-muted); margin-bottom:5px;">Répartition des ${kpi.patientCount} patients (dernier check-in)</div>
+            <div style="display:flex; height:14px; border-radius:7px; overflow:hidden; background:var(--surface-3);">${strip}</div>
+            <div class="chart-legend">${legend}</div>
+            ${offTarget.length
+              ? `<div class="text-sm" style="margin-top:8px; color:var(--text-secondary);">
+                   <strong>${offTarget.length}</strong> patient${offTarget.length > 1 ? "s" : ""} avec une TSH hors cible :
+                   ${offTarget.map((p) => `<button class="btn btn-ghost btn-sm" style="padding:1px 6px;" onclick="openDoctorPatientDetails('${p.patientId}')">${p.name} (${p.tsh})</button>`).join(" ")}
+                 </div>`
+              : ""}`;
+        } catch (err) {
+          if (listEl) listEl.innerHTML = `<p class="text-sm" style="color:var(--danger);">${err.message || "Erreur de chargement."}</p>`;
+        }
+      }
+
+      async function renderPatientTrends(patientId) {
+        const host = document.getElementById("patientTrends");
+        if (!host) return;
+        try {
+          const t = await apiFetch(`/doctors/me/patients/${patientId}/trends`);
+          const tshPts = t.checkins.map((c) => ({ t: c.date, v: c.tsh }));
+          const t4Pts = t.checkins.map((c) => ({ t: c.date, v: c.freeT4 }));
+          const weightPts = [
+            ...t.checkins.map((c) => ({ t: c.date, v: c.weight })),
+            ...t.symptoms.map((s) => ({ t: s.date, v: s.weight })),
+            ...t.appleHealth.body_mass.map((m) => ({ t: m.date, v: m.value })),
+          ]
+            .filter((p) => p.v != null)
+            .sort((a, b) => new Date(a.t) - new Date(b.t));
+          const hrPts = [
+            ...t.checkins.map((c) => ({ t: c.date, v: c.heartRate })),
+            ...t.symptoms.map((s) => ({ t: s.date, v: s.heartRate })),
+            ...t.appleHealth.resting_heart_rate.map((m) => ({ t: m.date, v: m.value })),
+          ]
+            .filter((p) => p.v != null)
+            .sort((a, b) => new Date(a.t) - new Date(b.t));
+
+          const timeline = t.checkins.length
+            ? `<div class="chart-legend" style="margin-top:2px;">${t.checkins
+                .map(
+                  (c) =>
+                    `<span title="${new Date(c.date).toLocaleDateString("fr-FR")} · score ${c.riskScore}">
+                       <i style="background:${CHART_COLORS[c.category] || CHART_COLORS.none}; border-radius:50%;"></i>
+                       ${new Date(c.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}</span>`,
+                )
+                .join("")}</div>`
+            : "";
+
+          host.innerHTML = `
+            <div class="chart-grid">
+              <div class="chart-box">
+                <h5>TSH (mUI/L) <span style="font-weight:400;">zone verte = cible</span></h5>
+                ${svgLine(tshPts, { color: CHART_COLORS.tsh, unit: " mUI/L", band: t.tshRange })}
+              </div>
+              <div class="chart-box">
+                <h5>T4 libre (ng/dL)</h5>
+                ${svgLine(t4Pts, { color: "#0984E3", unit: " ng/dL" })}
+              </div>
+              <div class="chart-box">
+                <h5>Poids (kg) <span style="font-weight:400;">check-in + Apple Watch</span></h5>
+                ${svgLine(weightPts, { color: CHART_COLORS.weight, unit: " kg" })}
+              </div>
+              <div class="chart-box">
+                <h5>Fréquence cardiaque (bpm)</h5>
+                ${svgLine(hrPts, { color: CHART_COLORS.hr, unit: " bpm" })}
+              </div>
+            </div>
+            <div style="margin-top:10px; font-size:0.78rem; color:var(--text-secondary);">
+              <strong>Historique des check-in :</strong> ${timeline || "aucun"}
+            </div>`;
+        } catch (err) {
+          host.innerHTML = `<p class="text-sm" style="color:var(--danger);">${err.message || "Erreur de chargement des courbes."}</p>`;
+        }
+      }
+      window.renderPatientTrends = renderPatientTrends;
+
+      function renderDoctorPatientsList() {
+        const container = document.getElementById("doctorPatientsList");
+        if (!doctorPatients.length) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🧑‍🤝‍🧑</div><h3>Aucun patient attribué</h3><p>Ajoutez ou assignez des patients pour commencer.</p></div>`;
+          return;
+        }
+
+        container.innerHTML = `
       <div class="med-list">
-        ${doctorPatients.map((p) => {
-          const profile = p.profile || {};
-          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
-          return `
+        ${doctorPatients
+          .map((p) => {
+            const profile = p.profile || {};
+            const fullName =
+              `${profile.firstName || ""} ${profile.lastName || ""}`.trim() ||
+              p.email;
+            return `
             <div class="med-card" style="align-items:flex-start;">
               <div class="med-color" style="background:var(--primary-light); color:var(--primary);">👤</div>
               <div class="med-info" style="flex:1;">
                 <h4>${fullName}</h4>
                 <p>${p.email}</p>
-                <p style="font-size:0.8rem; color:var(--text-muted);">Diagnostic: ${profile.diagnosis || 'Non renseigné'}</p>
+                <p style="font-size:0.8rem; color:var(--text-muted);">Diagnostic: ${profile.diagnosis || "Non renseigné"}</p>
               </div>
               <button class="btn btn-outline btn-sm" onclick="openDoctorPatientDetails('${p.id}')">Voir dossier</button>
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
     `;
-  }
+      }
 
-  function renderDoctorAvailablePatientsList() {
-    const container = document.getElementById('doctorAvailablePatientsList');
-    if (!availablePatients.length) {
-      container.innerHTML = `<p class="text-sm">Aucun patient disponible à l'assignation.</p>`;
-      return;
-    }
+      function renderDoctorAvailablePatientsList() {
+        const container = document.getElementById(
+          "doctorAvailablePatientsList",
+        );
+        if (!availablePatients.length) {
+          container.innerHTML = `<p class="text-sm">Aucun patient disponible à l'assignation.</p>`;
+          return;
+        }
 
-    container.innerHTML = `
+        container.innerHTML = `
       <div class="med-list">
-        ${availablePatients.map((p) => {
-          const profile = p.profile || {};
-          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
-          return `
+        ${availablePatients
+          .map((p) => {
+            const profile = p.profile || {};
+            const fullName =
+              `${profile.firstName || ""} ${profile.lastName || ""}`.trim() ||
+              p.email;
+            return `
             <div class="med-card" style="align-items:flex-start;">
               <div class="med-color" style="background:var(--surface-3); color:var(--text-secondary);">🧾</div>
               <div class="med-info" style="flex:1;">
@@ -641,368 +2130,848 @@
               <button class="btn btn-primary btn-sm" onclick="assignPatientToMe('${p.id}')">Assigner</button>
             </div>
           `;
-        }).join('')}
+          })
+          .join("")}
       </div>
     `;
-  }
+      }
 
-  function renderDoctorPendingRegistrations() {
-    const container = document.getElementById('doctorPendingPatientsList');
-    if (!pendingRegistrations.length) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><h3>Aucune inscription en attente</h3><p>Les nouvelles demandes patients apparaîtront ici.</p></div>`;
-      return;
-    }
+      async function assignPatientToMe(patientId) {
+        await apiFetch(`/doctors/me/patients/${patientId}/assign`, {
+          method: "PUT",
+        });
+        showToast("Patient assigné avec succès.");
+        await loadDoctorDashboard();
+      }
 
-    container.innerHTML = `
-      <div class="med-list">
-        ${pendingRegistrations.map((p) => {
-          const profile = p.profile || {};
-          const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || p.email;
-          const createdAt = p.createdAt ? formatDate(p.createdAt) : '-';
-          return `
-            <div class="med-card" style="align-items:flex-start;">
-              <div class="med-color" style="background:#FEF3C7; color:#B45309;">🕒</div>
-              <div class="med-info" style="flex:1;">
-                <h4>${fullName}</h4>
-                <p>${p.email}</p>
-                <p style="font-size:0.8rem; color:var(--text-muted);">Demande envoyée le ${createdAt}</p>
-              </div>
-              <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="approvePatientRegistration('${p.id}')">Valider</button>
-                <button class="btn btn-outline btn-sm" onclick="rejectPatientRegistration('${p.id}')">Refuser</button>
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
+      async function downloadDoctorDoc(id, inline) {
+        try {
+          const res = await fetch(
+            `/api/documents/${id}/download${inline ? "?inline=1" : ""}`,
+            { headers: { Authorization: `Bearer ${getToken()}` } },
+          );
+          if (!res.ok) throw new Error("indisponible");
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          if (inline) {
+            window.open(url, "_blank");
+          } else {
+            const cd = res.headers.get("Content-Disposition") || "";
+            const m = cd.match(/filename="?([^"]+)"?/);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = m ? decodeURIComponent(m[1]) : "document";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+          setTimeout(() => URL.revokeObjectURL(url), 10000);
+        } catch (err) {
+          showToast("Téléchargement impossible", "error");
+        }
+      }
 
-  async function approvePatientRegistration(patientId) {
-    await apiFetch(`/doctors/me/patient-registrations/${patientId}/approve`, {
-      method: 'PUT'
-    });
-    showToast('Inscription patient validée.');
-    await loadDoctorDashboard();
-    toggleDoctorTab('pending');
-  }
+      async function openDoctorPatientDetails(patientId) {
+        selectedPatientId = patientId;
+        toggleDoctorTab("details");
+        const body = document.getElementById("doctorPatientDetailsBody");
+        body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Chargement du dossier...</h3></div>`;
 
-  async function rejectPatientRegistration(patientId) {
-    await apiFetch(`/doctors/me/patient-registrations/${patientId}/reject`, {
-      method: 'PUT'
-    });
-    showToast('Inscription patient refusée.', 'warning');
-    await loadDoctorDashboard();
-    toggleDoctorTab('pending');
-  }
+        const data = await apiFetch(
+          `/doctors/me/patients/${patientId}/medical-info`,
+        );
+        const patient = data.patient;
+        const profile = patient.profile || {};
+        const vitals = getSymptomVitals(data.latestSymptom);
 
-  async function assignPatientToMe(patientId) {
-    await apiFetch(`/doctors/me/patients/${patientId}/assign`, {
-      method: 'PUT'
-    });
-    showToast('Patient assigné avec succès.');
-    await loadDoctorDashboard();
-  }
-
-  async function openDoctorPatientDetails(patientId) {
-    selectedPatientId = patientId;
-    toggleDoctorTab('details');
-    const body = document.getElementById('doctorPatientDetailsBody');
-    body.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⏳</div><h3>Chargement du dossier...</h3></div>`;
-
-    const data = await apiFetch(`/doctors/me/patients/${patientId}/medical-info`);
-    const patient = data.patient;
-    const profile = patient.profile || {};
-    const vitals = getSymptomVitals(data.latestSymptom);
-
-    body.innerHTML = `
+        body.innerHTML = `
       <div class="dashboard-grid-3">
         <div class="card" style="grid-column:1 / -1;">
           <div class="card-body">
-            <h3 style="margin-bottom:8px;">${(profile.firstName || '') + ' ' + (profile.lastName || '')}</h3>
+            <h3 style="margin-bottom:8px;">${(profile.firstName || "") + " " + (profile.lastName || "")}</h3>
             <p style="color:var(--text-secondary);">${patient.email}</p>
-            <p class="text-sm">Date de naissance: ${profile.dateOfBirth ? formatDate(profile.dateOfBirth) : 'Non renseignée'}</p>
-            <p class="text-sm">Diagnostic: ${profile.diagnosis || 'Non renseigné'}</p>
+            <p class="text-sm">Date de naissance: ${profile.dateOfBirth ? formatDate(profile.dateOfBirth) : "Non renseignée"}</p>
+            <p class="text-sm">Diagnostic: ${profile.diagnosis || "Non renseigné"}</p>
           </div>
         </div>
 
         <div class="card">
           <div class="card-header"><span class="card-title">❤️ Dernières constantes</span></div>
           <div class="card-body">
-            <p class="text-sm">Fréquence cardiaque: <strong>${vitals.heartRate || 'N/A'} bpm</strong></p>
-            <p class="text-sm">Tension: <strong>${vitals.bloodPressure || 'N/A'}</strong></p>
-            <p class="text-sm">Température: <strong>${vitals.temperature || 'N/A'} °C</strong></p>
-            <p class="text-sm">Saturation O₂: <strong>${vitals.oxygenSaturation || 'N/A'} %</strong></p>
+            <p class="text-sm">Fréquence cardiaque: <strong>${vitals.heartRate || "N/A"} bpm</strong></p>
+            <p class="text-sm">Tension: <strong>${vitals.bloodPressure || "N/A"}</strong></p>
+            <p class="text-sm">Température: <strong>${vitals.temperature || "N/A"} °C</strong></p>
+            <p class="text-sm">Saturation O₂: <strong>${vitals.oxygenSaturation || "N/A"} %</strong></p>
             <p class="text-sm">Symptômes: <strong>${data.latestSymptom && data.latestSymptom.symptoms ? data.latestSymptom.symptoms.length : 0}</strong></p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🦋 Dernier checking thyroïde</span></div>
+          <div class="card-body">
+            ${
+              data.thyroidCheckins && data.thyroidCheckins.length
+                ? (() => {
+                    const checkin = data.thyroidCheckins[0];
+                    const measurements = checkin.measurements || {};
+                    const categoryLabels = {
+                      normal: "Normal",
+                      surveillance: "Surveillance",
+                      important: "Important",
+                      urgent: "Urgent",
+                    };
+                    return `<p class="text-sm"><strong>${categoryLabels[checkin.category] || checkin.category}</strong> · score ${checkin.riskScore}</p>
+                <p class="text-sm">TSH: <strong>${measurements.tsh ?? "N/A"}</strong> · T4L: <strong>${measurements.freeT4 ?? "N/A"}</strong></p>
+                <p class="text-sm">${formatDate(checkin.checkedAt)}</p>
+                <p class="text-sm" style="color:var(--text-secondary);">${(checkin.reasons || []).join(" ")}</p>`;
+                  })()
+                : '<p class="text-sm">Aucun checking thyroïde enregistré</p>'
+            }
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">⌚ Apple Watch</span></div>
+          <div class="card-body">
+            ${renderDoctorWatch(data.appleHealthMeasurements)}
           </div>
         </div>
 
         <div class="card">
           <div class="card-header"><span class="card-title">💊 Traitements</span></div>
           <div class="card-body">
-            ${data.medications.length ? data.medications.slice(0, 5).map((m) => `<p class="text-sm">• ${m.name} (${m.dosage || '-'})</p>`).join('') : '<p class="text-sm">Aucun traitement</p>'}
+            ${
+              data.medications.length
+                ? data.medications
+                    .slice(0, 5)
+                    .map(
+                      (m) =>
+                        `<p class="text-sm">• ${m.name} (${m.dosage || "-"})</p>`,
+                    )
+                    .join("")
+                : '<p class="text-sm">Aucun traitement</p>'
+            }
           </div>
         </div>
 
         <div class="card">
           <div class="card-header"><span class="card-title">📅 Rendez-vous</span></div>
           <div class="card-body">
-            ${data.appointments.length ? data.appointments.slice(0, 5).map((a) => `<p class="text-sm">• ${a.title || a.type} - ${formatDate(a.date)} ${a.time || ''}</p>`).join('') : '<p class="text-sm">Aucun rendez-vous</p>'}
+            ${
+              data.appointments.length
+                ? data.appointments
+                    .slice(0, 5)
+                    .map(
+                      (a) =>
+                        `<p class="text-sm">• ${a.title || a.type} - ${formatDate(a.date)} ${a.time || ""}</p>`,
+                    )
+                    .join("")
+                : '<p class="text-sm">Aucun rendez-vous</p>'
+            }
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header"><span class="card-title">📁 Documents</span></div>
+          <div class="card-header"><span class="card-title">📁 Documents partagés</span></div>
           <div class="card-body">
-            ${data.documents.length ? data.documents.slice(0, 5).map((d) => `<p class="text-sm">• ${d.name}</p>`).join('') : '<p class="text-sm">Aucun document</p>'}
+            <div id="doctorDocUploadRow" hidden style="margin-bottom:12px; padding:12px; background:var(--surface-2); border-radius:var(--radius-sm); display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end;">
+              <div style="flex:2; min-width:160px;">
+                <label class="text-sm" style="display:block; margin-bottom:4px;">Fichier (PDF, image, Word, 10 Mo)</label>
+                <input type="file" id="doctorDocFile" accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.txt,.doc,.docx" class="form-control" style="font-size:0.8rem;">
+              </div>
+              <div style="flex:1; min-width:120px;">
+                <label class="text-sm" style="display:block; margin-bottom:4px;">Nom</label>
+                <input type="text" id="doctorDocName" class="form-control" placeholder="Ordonnance…" style="font-size:0.8rem;">
+              </div>
+              <div style="flex:1; min-width:110px;">
+                <label class="text-sm" style="display:block; margin-bottom:4px;">Type</label>
+                <select id="doctorDocType" class="form-control" style="font-size:0.8rem;">
+                  <option value="prescription">Ordonnance</option>
+                  <option value="report">Compte rendu</option>
+                  <option value="exam">Examen</option>
+                  <option value="surgery">Chirurgie</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>
+              <button class="btn btn-primary btn-sm" id="doctorDocSubmit" onclick="submitDoctorDocument('${patient.id}')">Envoyer au dossier du patient</button>
+            </div>
+            ${
+              data.documents.length
+                ? data.documents
+                    .map(
+                      (d) => `<div style="display:flex; align-items:center; gap:8px; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--surface-3);">
+                        <span class="text-sm">📄 ${d.name}${d.uploadedByRole === "doctor" ? ' <span style="color:var(--primary); font-size:0.7rem;">(envoyé par vous)</span>' : ""}${d.description ? ` <span style="color:var(--text-muted);">— ${d.description}</span>` : ""}</span>
+                        <span style="display:flex; gap:6px;">
+                          <button class="btn btn-outline btn-sm" onclick="downloadDoctorDoc('${d.id}', true)" aria-label="Ouvrir"><span data-icon="eye" data-icon-size="15"></span></button>
+                          <button class="btn btn-primary btn-sm" onclick="downloadDoctorDoc('${d.id}', false)" aria-label="Télécharger"><span data-icon="download" data-icon-size="15"></span></button>
+                        </span>
+                      </div>`,
+                    )
+                    .join("")
+                : '<p class="text-sm">Aucun document partagé</p>'
+            }
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header"><span class="card-title">🔔 Notifications récentes</span></div>
+          <div class="card-header"><span class="card-title"><span data-icon="bell" data-icon-size="16"></span>Notifications récentes</span></div>
           <div class="card-body">
-            ${data.notifications.length ? data.notifications.slice(0, 5).map((n) => `<p class="text-sm">• ${n.title}</p>`).join('') : '<p class="text-sm">Aucune notification</p>'}
+            ${
+              data.notifications.length
+                ? data.notifications
+                    .slice(0, 5)
+                    .map((n) => `<p class="text-sm">• ${n.title}</p>`)
+                    .join("")
+                : '<p class="text-sm">Aucune notification</p>'
+            }
           </div>
+        </div>
+
+        <div class="card" style="grid-column:1 / -1;">
+          <div class="card-header"><span class="card-title">📈 Évolution du patient</span></div>
+          <div class="card-body" id="patientTrends"><p class="text-sm">Chargement des courbes…</p></div>
         </div>
       </div>
     `;
-  }
 
-  async function sendDoctorNotification() {
-    if (!selectedPatientId) {
-      showToast('Sélectionnez un patient d\'abord.', 'warning');
-      return;
-    }
+        renderPatientTrends(patientId);
+      }
 
-    const title = prompt('Titre de la notification à envoyer au patient :');
-    if (!title) return;
-    const message = prompt('Message à envoyer :');
-    if (!message) return;
+      async function sendDoctorNotification() {
+        if (!selectedPatientId) {
+          showToast("Sélectionnez un patient d'abord.", "warning");
+          return;
+        }
 
-    await apiFetch(`/doctors/me/patients/${selectedPatientId}/notify`, {
-      method: 'POST',
-      body: JSON.stringify({ title, message, type: 'message' })
-    });
-    showToast('Notification envoyée au patient.');
-  }
+        const title = prompt("Titre de la notification à envoyer au patient :");
+        if (!title) return;
+        const message = prompt("Message à envoyer :");
+        if (!message) return;
 
-  async function createDoctorAppointment() {
-    if (!selectedPatientId) {
-      showToast('Sélectionnez un patient d\'abord.', 'warning');
-      return;
-    }
+        await apiFetch(`/doctors/me/patients/${selectedPatientId}/notify`, {
+          method: "POST",
+          body: JSON.stringify({ title, message, type: "message" }),
+        });
+        showToast("Notification envoyée au patient.");
+      }
 
-    const title = prompt('Titre du rendez-vous :', 'Suivi médical');
-    if (!title) return;
-    const date = prompt('Date du rendez-vous (YYYY-MM-DD) :');
-    if (!date) return;
-    const time = prompt('Heure du rendez-vous (HH:mm) :', '10:00');
-    if (!time) return;
-    const location = prompt('Lieu (optionnel) :', 'Cabinet médical');
+      async function createDoctorAppointment() {
+        if (!selectedPatientId) {
+          showToast("Sélectionnez un patient d'abord.", "warning");
+          return;
+        }
 
-    await apiFetch(`/doctors/me/patients/${selectedPatientId}/appointments`, {
-      method: 'POST',
-      body: JSON.stringify({
-        title,
-        date,
-        time,
-        location: location || '',
-        type: 'consultation',
-        status: 'upcoming'
-      })
-    });
+        const title = prompt("Titre du rendez-vous :", "Suivi médical");
+        if (!title) return;
+        const date = prompt("Date du rendez-vous (YYYY-MM-DD) :");
+        if (!date) return;
+        const time = prompt("Heure du rendez-vous (HH:mm) :", "10:00");
+        if (!time) return;
+        const location = prompt("Lieu (optionnel) :", "Cabinet médical");
 
-    showToast('Rendez-vous ajouté pour le patient.');
-    await openDoctorPatientDetails(selectedPatientId);
-  }
+        await apiFetch(
+          `/doctors/me/patients/${selectedPatientId}/appointments`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              title,
+              date,
+              time,
+              location: location || "",
+              type: "consultation",
+              status: "upcoming",
+            }),
+          },
+        );
 
-  async function loadPatientDashboard() {
-    // Welcome
-    const hour = new Date().getHours();
-    const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-    document.getElementById('welcomeTitle').textContent = `${greet} ${user.profile.firstName} 👋`;
+        showToast("Rendez-vous ajouté pour le patient.");
+        await openDoctorPatientDetails(selectedPatientId);
+      }
 
-    // Recovery
-    const days = getDaysSinceDischarge(user.profile.hospitalDischargeDate);
-    const totalRecovery = 56; // 8 weeks typical recovery
-    const pct = Math.min(Math.round((days / totalRecovery) * 100), 100);
-    document.getElementById('recoveryPercent').textContent = pct + '%';
-    document.getElementById('recoveryFill').style.width = pct + '%';
-    document.getElementById('recoveryText').textContent =
-      `Jour ${days} de convalescence sur ~${totalRecovery} jours. ${
-        pct >= 100 ? 'Félicitations ! Rétablissement terminé.' : `Il reste environ ${totalRecovery - days} jours.`
-      }`;
-    document.getElementById('statDays').textContent = days;
+      async function loadPatientDashboard() {
+        // Welcome
+        const hour = new Date().getHours();
+        const greet =
+          hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
+        document.getElementById("welcomeTitle").textContent =
+          `${greet} ${user.profile.firstName} 👋`;
 
-    // Load data in parallel
-    const [appointments, medications, latestSymptom] = await Promise.all([
-      apiFetch('/appointments'),
-      apiFetch('/medications'),
-      apiFetch('/symptoms/latest')
-    ]);
+        // Dernière TSH (dernier checking thyroïde)
+        apiFetch("/thyroid-checkins/latest")
+          .then((checkin) => {
+            const el = document.getElementById("statTsh");
+            const label = document.getElementById("statTshLabel");
+            if (!el) return;
+            const tsh = checkin && checkin.measurements
+              ? Number(checkin.measurements.tsh)
+              : NaN;
+            if (!Number.isFinite(tsh)) {
+              el.textContent = "—";
+              if (label) label.textContent = "aucun dosage saisi";
+              return;
+            }
+            el.textContent = String(tsh).replace(".", ",");
+            if (label) {
+              const inRange = tsh >= 0.4 && tsh <= 4;
+              label.textContent = inRange
+                ? "mUI/L · dans la cible"
+                : tsh > 4
+                  ? "mUI/L · au-dessus de la cible"
+                  : "mUI/L · en dessous de la cible";
+              label.style.color = inRange ? "var(--success)" : "var(--warning)";
+            }
+          })
+          .catch(() => {});
 
-    // Stats
-    document.getElementById('statMeds').textContent = medications.length;
-    const futureApts = appointments.filter(a => isFuture(a.date));
-    document.getElementById('statApts').textContent = futureApts.length;
+        // Load data in parallel
+        const [appointments, medications, latestSymptom, appleHealthSummary] =
+          await Promise.all([
+            apiFetch("/appointments"),
+            apiFetch("/medications"),
+            apiFetch("/symptoms/latest"),
+            apiFetch("/apple-health/summary").catch((error) => ({
+              error: error.message,
+            })),
+          ]);
 
-    const latestVitals = getSymptomVitals(latestSymptom);
-    if (latestVitals.heartRate) {
-      document.getElementById('statHR').textContent = latestVitals.heartRate;
-    }
+        renderAppleHealthSummary(appleHealthSummary);
 
-    // Appointments
-    renderUpcomingApts(futureApts.slice(0, 3));
+        // Stats
+        document.getElementById("statMeds").textContent = medications.length;
+        const futureApts = appointments.filter((a) => isFuture(a.date));
+        document.getElementById("statApts").textContent = futureApts.length;
 
-    // Medications
-    renderMeds(medications.slice(0, 4));
+        const latestVitals = getSymptomVitals(latestSymptom);
+        if (latestVitals.heartRate) {
+          document.getElementById("statHR").textContent =
+            latestVitals.heartRate;
+        }
 
-    // Health score
-    if (latestSymptom) {
-      renderHealthScore(latestSymptom);
-    } else {
-      document.getElementById('healthNum').textContent = 'N/A';
-      document.getElementById('hmHR').textContent = 'Non saisi';
-      document.getElementById('hmBP').textContent = 'Non saisi';
-      document.getElementById('hmTemp').textContent = 'Non saisi';
-      document.getElementById('hmO2').textContent = 'Non saisi';
-    }
+        // Appointments
+        renderUpcomingApts(futureApts.slice(0, 3));
 
-    // Notifications
-    const notifs = await apiFetch('/patients/notifications');
-    const unread = notifs.filter(n => !n.read);
-    if (unread.length > 0) document.getElementById('notifDot').style.display = 'block';
-  }
+        // Medications
+        renderMeds(medications.slice(0, 4));
 
-  function renderUpcomingApts(apts) {
-    const el = document.getElementById('aptList');
-    if (apts.length === 0) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>Aucun rendez-vous à venir</h3><p>Planifiez votre prochain rendez-vous médical</p><button class="btn btn-primary btn-sm" onclick="window.location.href='/appointments'">Planifier</button></div>`;
-      return;
-    }
-    el.innerHTML = `<div class="apt-list">${apts.map(a => `
+        // Health score
+        if (latestSymptom) {
+          renderHealthScore(latestSymptom);
+        } else {
+          document.getElementById("healthNum").textContent = "N/A";
+          document.getElementById("hmHR").textContent = "Non saisi";
+          document.getElementById("hmBP").textContent = "Non saisi";
+          document.getElementById("hmTemp").textContent = "Non saisi";
+          document.getElementById("hmO2").textContent = "Non saisi";
+        }
+
+        // Notifications
+        await loadNotifications();
+      }
+
+      // ===== Alerte d'urgence après un checking classé "urgent" =====
+      function openEmergencyModal(reasons) {
+        const box = document.getElementById("emergencyReasons");
+        if (box) {
+          const list = (reasons || []).filter(Boolean);
+          box.className = list.length ? "emergency-reasons" : "";
+          box.innerHTML = list.length
+            ? `<p>Ce qui a déclenché cette alerte</p><ul>${list
+                .map((r) => `<li>${escapeHTML(r)}</li>`)
+                .join("")}</ul>`
+            : "";
+        }
+        openModal("emergencyModal");
+        // Le focus part sur le bouton d'appel : au clavier comme au lecteur
+        // d'écran, le 15 est la première chose atteinte.
+        setTimeout(() => {
+          const call = document.querySelector("#emergencyModal .emg-call.urgent");
+          if (call) call.focus();
+        }, 120);
+      }
+      window.openEmergencyModal = openEmergencyModal;
+
+      // ===== Centre de notifications (patient ET médecin) =====
+      const NOTIF_META = {
+        alert: { icon: "alert", label: "Alerte", href: "/symptoms" },
+        appointment: { icon: "calendar", label: "Rendez-vous", href: "/appointments" },
+        medication: { icon: "pill", label: "Traitement", href: "/medications" },
+        message: { icon: "messages", label: "Message", href: "/messages" },
+        document: { icon: "folder", label: "Document", href: "/documents" },
+      };
+
+      function relativeTime(ts) {
+        const diff = Math.floor((Date.now() - new Date(ts)) / 60000);
+        if (diff < 1) return "à l'instant";
+        if (diff < 60) return `il y a ${diff} min`;
+        const h = Math.floor(diff / 60);
+        if (h < 24) return `il y a ${h} h`;
+        const d = Math.floor(h / 24);
+        if (d === 1) return "hier";
+        if (d < 7) return `il y a ${d} jours`;
+        return new Date(ts).toLocaleDateString("fr-FR");
+      }
+
+      function escapeNotif(s) {
+        return String(s || "").replace(/[&<>"']/g, (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
+        );
+      }
+
+      const isDoctorUser = () => (getUser() || {}).role === "doctor";
+
+      async function loadNotifications() {
+        const list = document.getElementById("notifList");
+        const dot = document.getElementById("notifDot");
+        if (!list) return;
+        try {
+          let items;
+          let unread;
+
+          if (isDoctorUser()) {
+            const data = await apiFetch("/doctors/me/notifications");
+            unread = data.unread;
+            items = data.items.map((i) => ({
+              id: i.id,
+              kind: i.kind,
+              read: i.read,
+              title: i.title,
+              message: i.message,
+              timestamp: i.timestamp,
+              patientId: i.patientId,
+            }));
+          } else {
+            const notifs = await apiFetch("/patients/notifications");
+            unread = notifs.filter((n) => !n.read).length;
+            items = notifs.slice(0, 20).map((n) => ({
+              id: n.id,
+              kind: n.type,
+              read: n.read,
+              title: n.title,
+              message: n.message,
+              timestamp: n.timestamp,
+              patientId: null,
+            }));
+          }
+
+          if (dot) {
+            dot.style.display = unread ? "block" : "none";
+            dot.textContent = unread > 9 ? "9+" : unread || "";
+          }
+
+          list.innerHTML = items.length
+            ? items
+                .map((n) => {
+                  const meta = NOTIF_META[n.kind] || NOTIF_META.message;
+                  return `<div class="notif-item ${n.read ? "" : "unread"}"
+                       onclick="openNotification('${n.id}', '${n.kind}', '${n.patientId || ""}')">
+                    <span class="n-ico ${n.kind}" data-icon="${meta.icon}" data-icon-size="16"></span>
+                    <span class="n-body">
+                      <h5>${escapeNotif(n.title)}</h5>
+                      ${n.message ? `<p>${escapeNotif(n.message)}</p>` : ""}
+                      <time>${meta.label} · ${relativeTime(n.timestamp)}</time>
+                    </span>
+                    ${n.read ? "" : '<span class="n-unread"></span>'}
+                  </div>`;
+                })
+                .join("")
+            : `<div class="notif-empty">${isDoctorUser() ? "Aucune alerte ni message en attente." : "Aucune notification pour le moment."}</div>`;
+        } catch (err) {
+          list.innerHTML = `<div class="notif-empty" style="color:var(--danger)">${err.message || "Erreur de chargement."}</div>`;
+        }
+      }
+
+      async function openNotification(id, kind, patientId) {
+        if (isDoctorUser()) {
+          // Message : on ouvre directement le fil du patient.
+          if (kind === "message" && patientId) {
+            window.location.href = "/messages?patientId=" + encodeURIComponent(patientId);
+            return;
+          }
+          if (kind === "alert") {
+            try {
+              await apiFetch(`/doctors/me/alerts/${id}/read`, { method: "PUT" });
+            } catch (e) {
+              /* on ouvre le dossier quand même */
+            }
+          }
+          // Alerte ou document : on ouvre le dossier du patient sur place.
+          const panel = document.getElementById("notifPanel");
+          if (panel) panel.hidden = true;
+          if (patientId) {
+            openDoctorPatientDetails(patientId);
+            loadNotifications();
+          }
+          return;
+        }
+
+        try {
+          await apiFetch(`/patients/notifications/${id}/read`, { method: "PUT" });
+        } catch (e) {
+          /* on navigue quand même */
+        }
+        window.location.href = (NOTIF_META[kind] || NOTIF_META.message).href;
+      }
+      window.openNotification = openNotification;
+
+      function initNotifications() {
+        const btn = document.getElementById("notifBtn");
+        const panel = document.getElementById("notifPanel");
+        const readAll = document.getElementById("notifReadAll");
+        if (!btn || !panel) return;
+
+        const toggle = (open) => {
+          panel.hidden = open === undefined ? !panel.hidden : !open;
+          btn.setAttribute("aria-expanded", String(!panel.hidden));
+          if (!panel.hidden) loadNotifications();
+        };
+
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          toggle();
+        });
+        btn.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggle();
+          }
+        });
+        panel.addEventListener("click", (e) => e.stopPropagation());
+        document.addEventListener("click", () => {
+          if (!panel.hidden) toggle(false);
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !panel.hidden) toggle(false);
+        });
+
+        if (readAll) {
+          readAll.addEventListener("click", async () => {
+            const url = isDoctorUser()
+              ? "/doctors/me/alerts/read-all"
+              : "/patients/notifications/read-all";
+            try {
+              await apiFetch(url, { method: "PUT" });
+              await loadNotifications();
+              showToast("Notifications marquées comme lues");
+            } catch (err) {
+              showToast("Action impossible", "error");
+            }
+          });
+        }
+      }
+
+      // Indicateurs Apple Watch retenus pour un suivi thyroïdien, dans l'ordre
+      // d'intérêt clinique. `flag` renvoie un libellé quand la valeur sort des
+      // repères usuels (hyper- ou hypothyroïdie).
+      const THYROID_WATCH_METRICS = [
+        {
+          type: "resting_heart_rate",
+          label: "FC au repos",
+          icon: "heart",
+          flag: (v) => (v > 90 ? "élevée" : v < 50 ? "basse" : null),
+        },
+        {
+          type: "heart_rate",
+          label: "Fréquence cardiaque",
+          icon: "activity",
+          flag: (v) => (v > 100 ? "élevée" : null),
+        },
+        { type: "body_mass", label: "Poids", icon: "timer", flag: null },
+        {
+          type: "oxygen_saturation",
+          label: "Saturation O₂",
+          icon: "pulse",
+          flag: (v) => (v < 94 ? "basse" : null),
+        },
+        {
+          type: "body_temperature",
+          label: "Température",
+          icon: "timer",
+          flag: (v) => (v >= 38 ? "fièvre" : null),
+        },
+        {
+          type: "respiratory_rate",
+          label: "Fréquence respiratoire",
+          icon: "activity",
+          flag: (v) => (v > 20 ? "élevée" : null),
+        },
+      ];
+
+      // Vue médecin : dernière valeur par indicateur utile, pas le flux brut.
+      function renderDoctorWatch(measurements) {
+        if (!measurements || !measurements.length) {
+          return '<p class="text-sm">Aucune donnée Apple Watch synchronisée</p>';
+        }
+        const rows = THYROID_WATCH_METRICS.map((m) => {
+          const list = measurements
+            .filter((x) => x.type === m.type)
+            .sort((a, b) => new Date(b.measuredAt) - new Date(a.measuredAt));
+          if (!list.length) return null;
+          const last = list[0];
+          const avg =
+            list.reduce((s, x) => s + Number(x.value), 0) / list.length;
+          const flag = m.flag ? m.flag(Number(last.value)) : null;
+          return `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid var(--border-light);">
+            <span class="text-sm">${m.label}</span>
+            <span class="text-sm" style="text-align:right;">
+              <strong style="color:${flag ? "var(--warning)" : "var(--text-primary)"}">${last.value} ${last.unit}</strong>
+              ${flag ? `<span style="color:var(--warning); font-weight:600;"> · ${flag}</span>` : ""}
+              <span style="color:var(--text-muted);"> · moy. ${avg.toFixed(1)} · ${formatDate(last.measuredAt)}</span>
+            </span>
+          </div>`;
+        }).filter(Boolean);
+
+        return rows.length
+          ? rows.join("")
+          : '<p class="text-sm">Aucune mesure utile au suivi thyroïdien</p>';
+      }
+
+      function renderAppleHealthSummary(data) {
+        const container = document.getElementById("appleHealthSummary");
+        const status = document.getElementById("appleHealthSyncStatus");
+        if (!container || !status) return;
+        if (data && data.error) {
+          status.textContent = "Erreur de lecture";
+          container.innerHTML = `<p class="text-sm" style="color:var(--danger);">${data.error}</p>`;
+          return;
+        }
+        if (!data || !Object.keys(data.summary || {}).length) {
+          status.textContent = "Aucune mesure sur les 7 derniers jours";
+          container.innerHTML =
+            '<p class="text-sm text-muted">La synchronisation a réussi, mais aucune mesure récente ne correspond à ce patient. Vérifiez que le compte utilisé sur l’iPhone est le même que celui du dashboard.</p>';
+          return;
+        }
+
+        // On n'affiche que les mesures qui pèsent dans un suivi thyroïdien.
+        // Les pas, la distance, les étages ou la VO₂ max sont écartés : ils
+        // encombrent la lecture sans orienter la décision médicale.
+        const shown = THYROID_WATCH_METRICS.filter(
+          (m) => data.summary[m.type] && data.summary[m.type].count > 0,
+        );
+
+        if (!shown.length) {
+          status.textContent = "Aucune mesure utile sur 7 jours";
+          container.innerHTML =
+            '<p class="text-sm text-muted">Aucune fréquence cardiaque, poids ou saturation synchronisés récemment.</p>';
+          return;
+        }
+
+        status.textContent = `7 derniers jours · ${shown.length} indicateur(s) suivi(s)`;
+        container.innerHTML = `<div class="health-metrics">${shown
+          .map((m) => {
+            const item = data.summary[m.type];
+            const value = item.latest.value;
+            const flag = m.flag ? m.flag(value) : null;
+            const color = flag ? "var(--warning)" : "var(--success)";
+            return `<div class="health-metric">
+              <span class="health-metric-icon" data-icon="${m.icon}" data-icon-size="17"></span>
+              <span class="health-metric-label">${m.label}</span>
+              <span class="health-metric-value" style="color:${color}">${value} ${item.latest.unit}</span>
+              <span class="text-muted text-sm">moy. 7 j : ${item.average} ${item.latest.unit}</span>
+              ${flag ? `<span class="text-sm" style="color:var(--warning); font-weight:600;">${flag}</span>` : ""}
+            </div>`;
+          })
+          .join("")}</div>
+          <p class="text-sm text-muted" style="margin-top:10px;">
+            Seules les mesures utiles au suivi thyroïdien sont affichées (rythme cardiaque, poids, saturation, température, respiration).
+          </p>`;
+      }
+
+      function renderUpcomingApts(apts) {
+        const el = document.getElementById("aptList");
+        if (apts.length === 0) {
+          el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📅</div><h3>Aucun rendez-vous à venir</h3><p>Planifiez votre prochain rendez-vous médical</p><button class="btn btn-primary btn-sm" onclick="window.location.href='/appointments'">Planifier</button></div>`;
+          return;
+        }
+        el.innerHTML = `<div class="apt-list">${apts
+          .map(
+            (a) => `
       <div class="apt-card">
         <div class="apt-date-box">
           <div class="apt-day">${getDay(a.date)}</div>
           <div class="apt-month">${getMonthShort(a.date)}</div>
         </div>
         <div class="apt-info">
-          <h4>${a.title || 'Rendez-vous'}</h4>
+          <h4>${a.title || "Rendez-vous"}</h4>
           <div class="apt-meta">
-            <span>🏥 ${a.type || 'consultation'}</span>
+            <span>🏥 ${a.type || "consultation"}</span>
             <span>⏰ ${a.time}</span>
-            ${a.location ? `<span>📍 ${a.location.substring(0, 40)}${a.location.length > 40 ? '...' : ''}</span>` : ''}
+            ${a.location ? `<span>📍 ${a.location.substring(0, 40)}${a.location.length > 40 ? "..." : ""}</span>` : ""}
           </div>
         </div>
-        <span class="apt-status ${a.status}">${a.status === 'upcoming' ? 'À venir' : a.status === 'completed' ? 'Terminé' : a.status === 'cancelled' ? 'Annulé' : 'En attente'}</span>
+        <span class="apt-status ${a.status}">${a.status === "upcoming" ? "À venir" : a.status === "completed" ? "Terminé" : a.status === "cancelled" ? "Annulé" : "En attente"}</span>
       </div>
-    `).join('')}</div>`;
-  }
+    `,
+          )
+          .join("")}</div>`;
+      }
 
-  function renderMeds(meds) {
-    const el = document.getElementById('medList');
-    if (meds.length === 0) {
-      el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💊</div><h3>Aucun médicament</h3></div>`;
-      return;
-    }
-    el.innerHTML = `<div class="med-list">${meds.map(m => `
+      function renderMeds(meds) {
+        const el = document.getElementById("medList");
+        if (meds.length === 0) {
+          el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💊</div><h3>Aucun médicament</h3></div>`;
+          return;
+        }
+        el.innerHTML = `<div class="med-list">${meds
+          .map(
+            (m) => `
       <div class="med-card">
         <div class="med-color" style="background:${m.color}20; color:${m.color}">💊</div>
         <div class="med-info">
           <h4>${m.name} <small style="font-weight:400;color:var(--text-muted)">${m.dosage}</small></h4>
-          <p>${m.frequency} · ${m.times.join(', ')}</p>
+          <p>${m.frequency} · ${m.times.join(", ")}</p>
         </div>
-        <span class="med-time">${m.times[0] || ''}</span>
+        <span class="med-time">${m.times[0] || ""}</span>
       </div>
-    `).join('')}</div>`;
-  }
+    `,
+          )
+          .join("")}</div>`;
+      }
 
-  function renderHealthScore(sym) {
-    const vitals = getSymptomVitals(sym);
-    const hr = vitals.heartRate;
-    const temp = vitals.temperature;
-    const o2 = vitals.oxygenSaturation;
+      function renderHealthScore(sym) {
+        const vitals = getSymptomVitals(sym);
+        const hr = vitals.heartRate;
+        const temp = vitals.temperature;
+        const o2 = vitals.oxygenSaturation;
 
-    let score = 100;
-    let warnings = 0;
+        let score = 100;
+        let warnings = 0;
 
-    // Heart rate
-    if (hr) {
-      const hrOk = hr >= 50 && hr <= 100;
-      document.getElementById('hmHR').textContent = hr + ' bpm';
-      document.getElementById('hmHRStatus').textContent = hrOk ? 'Normal' : 'Attention';
-      document.getElementById('hmHRStatus').className = 'health-metric-status ' + (hrOk ? 'status-normal' : 'status-warning');
-      document.getElementById('statHR').textContent = hr;
-      if (!hrOk) { score -= 20; warnings++; }
-    }
+        // Heart rate
+        if (hr) {
+          const hrOk = hr >= 50 && hr <= 100;
+          document.getElementById("hmHR").textContent = hr + " bpm";
+          document.getElementById("hmHRStatus").textContent = hrOk
+            ? "Normal"
+            : "Attention";
+          document.getElementById("hmHRStatus").className =
+            "health-metric-status " +
+            (hrOk ? "status-normal" : "status-warning");
+          document.getElementById("statHR").textContent = hr;
+          if (!hrOk) {
+            score -= 20;
+            warnings++;
+          }
+        }
 
-    // Blood pressure
-    if (vitals.bloodPressure) {
-      document.getElementById('hmBP').textContent = vitals.bloodPressure;
-      const [sys] = vitals.bloodPressure.split('/').map(Number);
-      const bpOk = sys >= 90 && sys <= 140;
-      document.getElementById('hmBPStatus').textContent = bpOk ? 'Normal' : 'Attention';
-      document.getElementById('hmBPStatus').className = 'health-metric-status ' + (bpOk ? 'status-normal' : 'status-warning');
-      if (!bpOk) { score -= 15; warnings++; }
-    }
+        // Blood pressure
+        if (vitals.bloodPressure) {
+          document.getElementById("hmBP").textContent = vitals.bloodPressure;
+          const [sys] = vitals.bloodPressure.split("/").map(Number);
+          const bpOk = sys >= 90 && sys <= 140;
+          document.getElementById("hmBPStatus").textContent = bpOk
+            ? "Normal"
+            : "Attention";
+          document.getElementById("hmBPStatus").className =
+            "health-metric-status " +
+            (bpOk ? "status-normal" : "status-warning");
+          if (!bpOk) {
+            score -= 15;
+            warnings++;
+          }
+        }
 
-    // Temperature
-    if (temp) {
-      document.getElementById('hmTemp').textContent = temp + ' °C';
-      const tempOk = temp >= 36 && temp <= 37.5;
-      document.getElementById('hmTempStatus').textContent = tempOk ? 'Normal' : temp > 38 ? 'Fièvre' : 'Attention';
-      document.getElementById('hmTempStatus').className = 'health-metric-status ' + (tempOk ? 'status-normal' : temp > 38 ? 'status-danger' : 'status-warning');
-      if (!tempOk) { score -= 20; warnings++; }
-    }
+        // Temperature
+        if (temp) {
+          document.getElementById("hmTemp").textContent = temp + " °C";
+          const tempOk = temp >= 36 && temp <= 37.5;
+          document.getElementById("hmTempStatus").textContent = tempOk
+            ? "Normal"
+            : temp > 38
+              ? "Fièvre"
+              : "Attention";
+          document.getElementById("hmTempStatus").className =
+            "health-metric-status " +
+            (tempOk
+              ? "status-normal"
+              : temp > 38
+                ? "status-danger"
+                : "status-warning");
+          if (!tempOk) {
+            score -= 20;
+            warnings++;
+          }
+        }
 
-    // O2
-    if (o2) {
-      document.getElementById('hmO2').textContent = o2 + ' %';
-      const o2Ok = o2 >= 95;
-      document.getElementById('hmO2Status').textContent = o2Ok ? 'Normal' : 'Bas';
-      document.getElementById('hmO2Status').className = 'health-metric-status ' + (o2Ok ? 'status-normal' : 'status-danger');
-      if (!o2Ok) { score -= 20; warnings++; }
-    }
+        // O2
+        if (o2) {
+          document.getElementById("hmO2").textContent = o2 + " %";
+          const o2Ok = o2 >= 95;
+          document.getElementById("hmO2Status").textContent = o2Ok
+            ? "Normal"
+            : "Bas";
+          document.getElementById("hmO2Status").className =
+            "health-metric-status " +
+            (o2Ok ? "status-normal" : "status-danger");
+          if (!o2Ok) {
+            score -= 20;
+            warnings++;
+          }
+        }
 
-    // Symptoms severity
-    if (sym.symptoms) {
-      sym.symptoms.forEach(s => { if (s.severity >= 4) { score -= 10; } });
-    }
+        // Symptoms severity
+        if (sym.symptoms) {
+          sym.symptoms.forEach((s) => {
+            if (s.severity >= 4) {
+              score -= 10;
+            }
+          });
+        }
 
-    score = Math.max(0, score);
-    document.getElementById('healthNum').textContent = score;
+        score = Math.max(0, score);
+        document.getElementById("healthNum").textContent = score;
 
-    // Circle animation
-    const circumference = 351.86;
-    const offset = circumference - (score / 100) * circumference;
-    setTimeout(() => {
-      document.getElementById('healthCircle').style.transition = 'stroke-dashoffset 1s ease';
-      document.getElementById('healthCircle').setAttribute('stroke-dashoffset', offset);
-      const color = score >= 80 ? 'var(--success)' : score >= 60 ? 'var(--warning)' : 'var(--danger)';
-      document.getElementById('healthCircle').style.stroke = color;
-    }, 100);
-  }
+        // Circle animation
+        const circumference = 351.86;
+        const offset = circumference - (score / 100) * circumference;
+        setTimeout(() => {
+          document.getElementById("healthCircle").style.transition =
+            "stroke-dashoffset 1s ease";
+          document
+            .getElementById("healthCircle")
+            .setAttribute("stroke-dashoffset", offset);
+          const color =
+            score >= 80
+              ? "var(--success)"
+              : score >= 60
+                ? "var(--warning)"
+                : "var(--danger)";
+          document.getElementById("healthCircle").style.stroke = color;
+        }, 100);
+      }
 
-  const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-  document.getElementById('welcomeTitle').textContent = `${greet} ${user.profile.firstName || ''} 👋`;
+      const hour = new Date().getHours();
+      const greet =
+        hour < 12 ? "Bonjour" : hour < 18 ? "Bon après-midi" : "Bonsoir";
+      document.getElementById("welcomeTitle").textContent =
+        `${greet} ${user.profile.firstName || ""} 👋`;
 
-  if (user.role === 'doctor') {
-    loadDoctorDashboard().catch((err) => {
-      console.error(err);
-      showToast('Erreur chargement dashboard médecin', 'error');
-    });
-  } else {
-    loadPatientDashboard().catch((err) => {
-      console.error(err);
-      showToast('Erreur chargement dashboard patient', 'error');
-    });
-  }
+      initThyroidCheckin();
 
-  initAiDialog();
+      initNotifications();
 
-  window.openDoctorPatientDetails = openDoctorPatientDetails;
-  window.assignPatientToMe = assignPatientToMe;
-</script>
-</body>
+      if (user.role === "doctor") {
+        loadDoctorDashboard()
+          .then(loadNotifications)
+          .catch((err) => {
+            console.error(err);
+            showToast("Erreur chargement dashboard médecin", "error");
+          });
+      } else {
+        loadPatientDashboard().catch((err) => {
+          console.error(err);
+          showToast(
+            `Erreur chargement dashboard patient : ${err.message}`,
+            "error",
+          );
+        });
+      }
+
+      initAiDialog();
+
+      window.openDoctorPatientDetails = openDoctorPatientDetails;
+      window.assignPatientToMe = assignPatientToMe;
+      window.downloadDoctorDoc = downloadDoctorDoc;
+      window.submitDoctorDocument = submitDoctorDocument;
+    </script>
+  </body>
 </html>

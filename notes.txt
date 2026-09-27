@@ -1,0 +1,10 @@
+tu peux implementaire c'est point: 
+
+2-suivie symptome: faire un tableau pour voir l'evolution des sympotme pas mois pas annees pas semaines etc... voir si cela evolue ou pas.
+3- faire un questionnaire du chatbot pour repondre a des question sur le patiant concernant la prise ce medicaments. posibiliter de faire une note vocale aussi
+buton pour send un documment dans l'ongle doc
+
+4- alerte au medecin sur les cas plus important
+5- graphes de medecin kpi
+6- envoie de documment au patiant ou rendre les doc accesible coter patiant et medcin 
+planification rdv au patiant

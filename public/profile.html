@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SuiviPatient - Mon Profil</title>
   <link rel="stylesheet" href="/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     .ai-fab {
       position: fixed;
@@ -118,12 +118,13 @@
   <nav class="sidebar">
     <div class="sidebar-logo">
       <div class="sidebar-logo-icon">🏥</div>
-      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Post-hospitalisation</span></div>
+      <div class="sidebar-logo-text"><h2>SuiviPatient</h2><span>Suivi thyroïdien</span></div>
     </div>
     <nav class="sidebar-nav">
       <span class="nav-section-label">Principal</span>
       <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🏠</span>Tableau de bord</div>
       <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+      <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
       <span class="nav-section-label">Santé</span>
       <div class="nav-link" data-href="/symptoms"><span class="nav-icon">📊</span>Suivi symptômes</div>
       <div class="nav-link" data-href="/medications"><span class="nav-icon">💊</span>Médicaments</div>
@@ -144,7 +145,7 @@
   <div class="main-content">
     <div class="topbar">
       <div class="topbar-left">
-        <h1>👤 Mon profil</h1>
+        <h1><span data-icon="user" data-icon-size="22"></span>Mon profil</h1>
         <p>Informations personnelles et médicales</p>
       </div>
       <div class="topbar-right">
@@ -301,7 +302,7 @@
         if (!document.getElementById('aiDialogBody').children.length) {
           addAiDialogMessage('ai', user.role === 'doctor'
             ? 'Bonjour Docteur. Je peux vous aider sur l\'organisation du suivi patient.'
-            : 'Bonjour. Je peux vous aider pour vos questions de suivi post-hospitalisation.');
+            : 'Bonjour. Je peux répondre à vos questions sur votre thyroïde, votre traitement et vos résultats.');
         }
       }
     });
@@ -350,6 +351,7 @@
           <span class="nav-section-label">Médecin</span>
           <div class="nav-link" data-href="/dashboard"><span class="nav-icon">🩺</span>Dashboard médecin</div>
           <div class="nav-link" data-href="/chat"><span class="nav-icon">🤖</span>Assistant IA</div>
+          <div class="nav-link" data-href="/messages"><span class="nav-icon">💬</span>Messagerie</div>
           <span class="nav-section-label">Dossier</span>
           <div class="nav-link active" data-href="/profile"><span class="nav-icon">👤</span>Mon profil</div>
         `;
@@ -393,7 +395,7 @@
       : [
         { label: 'Diagnostic', value: p.diagnosis || '-' },
         { label: 'Médecin traitant', value: p.treatingDoctor || '-' },
-        { label: 'Établissement', value: p.hospitalStay || '-' },
+        { label: 'Établissement de suivi', value: p.hospitalStay || '-' },
         { label: 'Date de sortie', value: p.hospitalDischargeDate ? formatDate(p.hospitalDischargeDate) : '-' }
       ];
 
@@ -429,7 +431,7 @@
         const days = getDaysSinceDischarge(p.hospitalDischargeDate);
 
         document.getElementById('summaryInfo').innerHTML = [
-          { label: 'Jours de convalescence', value: days + ' jours' },
+          { label: 'Jours de suivi', value: days + ' jours' },
           { label: 'Médicaments en cours', value: medications.length },
           { label: 'Relevés de symptômes', value: symptoms.length },
           { label: 'Rendez-vous totaux', value: appointments.length }

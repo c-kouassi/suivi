@@ -20,6 +20,9 @@ pids/
 *.seed
 *.pid.lock
 
+# Documents patients uploadés
+data/uploads/
+
 # Build / coverage
 coverage/
 dist/
@@ -40,3 +43,8 @@ Thumbs.db
 # Cache
 .cache/
 .eslintcache
+
+# Xcode (préférences propres à chaque développeur)
+xcuserdata/
+*.xcuserstate
+DerivedData/

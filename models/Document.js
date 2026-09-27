@@ -15,10 +15,29 @@ const Document = sequelize.define('Document', {
     allowNull: false
   },
   type: {
-    type: DataTypes.ENUM('surgery', 'prescription', 'exam'),
-    allowNull: false
+    type: DataTypes.ENUM('surgery', 'prescription', 'exam', 'report', 'other'),
+    allowNull: false,
+    defaultValue: 'other'
   },
   category: DataTypes.STRING,
+  description: DataTypes.TEXT,
+  // Fichier stocke sur disque (data/uploads/documents).
+  originalName: DataTypes.STRING,
+  storedName: DataTypes.STRING,
+  mimeType: DataTypes.STRING,
+  size: DataTypes.INTEGER,
+  // Qui a depose le document.
+  uploadedById: DataTypes.STRING,
+  uploadedByRole: {
+    type: DataTypes.ENUM('patient', 'doctor'),
+    allowNull: true
+  },
+  // 'shared' = visible par le medecin traitant ; 'private' = patient uniquement.
+  visibility: {
+    type: DataTypes.ENUM('shared', 'private'),
+    allowNull: false,
+    defaultValue: 'shared'
+  },
   uploadDate: DataTypes.DATE,
   fileUrl: DataTypes.STRING
 }, {
