@@ -17,7 +17,15 @@ function getMailerTransport() {
     auth: {
       user,
       pass
-    }
+    },
+    // Sans ces délais, un serveur SMTP qui ne répond pas (Gmail filtre
+    // fréquemment les IP d'hébergeurs) laisse la requête d'inscription
+    // suspendue indéfiniment : le patient reste sur un formulaire qui tourne.
+    // On échoue vite, et l'inscription aboutit quand même — l'e-mail n'est
+    // pas bloquant.
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 12000
   });
 }
 
