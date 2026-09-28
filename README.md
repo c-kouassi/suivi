@@ -23,7 +23,7 @@ messagerie et partage des documents. Un assistant IA répond aux patients et aux
 | Base de données | MySQL 8 |
 | Auth | JWT (`jsonwebtoken`) + `bcryptjs` |
 | Upload fichiers | `multer` (stockage disque `data/uploads/`) |
-| Email | `nodemailer` (SMTP Gmail) — confirmation de compte |
+| Email | `nodemailer` (SMTP) — confirmation de compte. Gmail ne passe pas depuis un hébergeur, voir la section Envoi des e-mails |
 | LLM chatbot | API Groq (OpenAI-compatible), modèle par défaut `qwen/qwen3.8-27b` |
 | Front | Pages HTML/CSS/JS statiques servies depuis `public/` (aucun build) |
 | Typographie / icônes | Hanken Grotesk (Google Fonts) · icônes SVG au trait inline (`LINE_ICONS` dans `public/js/app.js`) |
@@ -139,9 +139,45 @@ Toutes les routes `/api/*` hors `login`/`register`/`confirm` exigent
 | --- | --- | --- |
 | POST | `/api/auth/register` | Inscription. Patient : `doctorCode` obligatoire → rattachement auto, compte actif immédiatement (aucune validation par le médecin). Doctor : renvoie directement un token. |
 | POST | `/api/auth/login` | Renvoie `{ token, user }`. Refuse si email non confirmé. |
-| GET | `/api/auth/confirm/:token` | Confirmation d'email (lien reçu par mail). |
+| GET | `/api/auth/confirm/:token` | Confirmation d'email. **Redirige** vers `/auth`, ne renvoie pas de JSON. |
 | GET | `/api/auth/me` | Profil courant. |
 | POST | `/api/auth/doctor/referral-code` | (Re)génère le code d'invitation du médecin. |
+
+#### Confirmation d'adresse e-mail
+
+Le lien envoyé par mail est ouvert dans un navigateur : la route **redirige**
+vers la page de connexion plutôt que de répondre en JSON, que l'utilisateur
+verrait s'afficher tel quel sur une page blanche.
+
+| Cas | Redirection | Affichage sur `/auth` |
+| --- | --- | --- |
+| Jeton valide | `/auth?confirme=1&email=…` | Bandeau vert, champ e-mail pré-rempli |
+| Jeton inconnu ou déjà consommé | `/auth?confirme=invalide` | Bandeau d'avertissement invitant à se connecter |
+
+`public/index.html` interprète ces paramètres puis nettoie l'URL, pour que le
+message ne réapparaisse pas au rechargement.
+
+Tant que l'adresse n'est pas confirmée, `POST /api/auth/login` répond **403**.
+Les 6 comptes créés par `npm run seed` sont déjà vérifiés.
+
+#### Envoi des e-mails
+
+`utils/email.js` ne construit un transport que si `SMTP_HOST`, `SMTP_USER` **et**
+`SMTP_PASS` sont présents ; sinon il renvoie `{ success: false,
+reason: 'SMTP_NOT_CONFIGURED' }` sans tenter l'envoi. Les erreurs SMTP sont
+toujours capturées : **un envoi raté n'empêche jamais la création du compte**,
+la réponse d'inscription porte le résultat dans `emailSent`.
+
+Les délais sont bornés (`connectionTimeout`, `greetingTimeout`, `socketTimeout`).
+Sans eux, un serveur SMTP qui ne répond pas laissait la requête d'inscription
+ouverte indéfiniment — le formulaire tournait sans fin côté patient.
+
+> ⚠️ **Gmail fonctionne en local mais refuse l'envoi depuis Railway.** Le mot de
+> passe d'application est accepté depuis un poste de développement, et rejeté ou
+> mis en attente depuis une IP d'hébergeur. Pour un envoi fiable en production,
+> utiliser un service conçu pour cela — **Brevo** (300 e-mails/jour gratuits,
+> aucun domaine à vérifier) suffit et ne demande que de changer `SMTP_HOST`,
+> `SMTP_USER` et `SMTP_PASS`, sans toucher au code.
 
 ### Médecin — `routes/doctors.js` (`ensureDoctor`)
 
@@ -277,40 +313,92 @@ Le client HTTP commun est `apiFetch()` (`public/js/app.js`) : une réponse 401/4
 route protégée **avec** un jeton stocké renvoie à l'accueil (session expirée) ; sur les
 routes `/auth/*` l'erreur remonte au formulaire.
 
+Côté serveur, le CORS est restreint à une liste blanche (`APP_BASE_URL` +
+localhost), mais **l'origine du serveur lui-même est toujours acceptée**, déduite
+de l'en-tête `Host` : le front étant servi par la même application, un
+`APP_BASE_URL` absent ou erroné ferait sinon échouer en 403 tous les appels du
+navigateur — les requêtes same-origin portent elles aussi un en-tête `Origin`.
+Les requêtes sans `Origin` (compagnon iOS, appels serveur) restent acceptées :
+`URLSession` n'est pas soumis au CORS, qui est un mécanisme de navigateur.
+
 ## Déploiement (Railway)
 
-Le projet est prêt pour Railway : `.nvmrc`, `engines`, `railway.json` (Nixpacks +
-healthcheck sur `/`), et `config/database.js` accepte aussi bien `DB_*` que les
-variables `MYSQL*` / `MYSQL_URL` injectées par le plugin MySQL de Railway.
+**En production :** https://suivi-production-caea.up.railway.app
+**Dépôt :** `c-kouassi/suivi` (le compte a été renommé, l'ancien `choco-bain` redirige)
 
-1. **Créer le projet** depuis le dépôt GitHub (`choco-bain/suivi`).
-2. **Ajouter le plugin MySQL** : Railway injecte `MYSQLHOST`, `MYSQLUSER`,
-   `MYSQLPASSWORD`, `MYSQLDATABASE`, `MYSQLPORT` — rien à recopier.
-3. **Ajouter un volume** monté sur `/app/data/uploads`.
+Artefacts prévus pour Railway : `.nvmrc`, `engines` dans `package.json`,
+`railway.json` (Nixpacks + healthcheck sur `/`). `config/database.js` accepte
+`DB_*`, `MYSQL_URL` / `DATABASE_URL`, ou les variables `MYSQL*`.
+
+1. **Créer le projet** depuis le dépôt GitHub.
+
+   Si le dépôt n'apparaît pas dans la liste, c'est que l'application GitHub de
+   Railway n'est pas installée sur le compte qui le possède :
+   https://github.com/apps/railway/installations/new
+
+2. **Ajouter le plugin MySQL** (*+ New → Database → Add MySQL*).
+
+3. **⚠️ Référencer la base dans le service applicatif.** C'est l'étape la plus
+   facile à manquer : sur Railway **les variables ne sont pas partagées entre
+   services**. Le plugin MySQL expose `MYSQLHOST` & co. *dans son propre
+   service*, l'application ne les voit pas. Il faut créer une référence
+   explicite dans les variables du service applicatif :
+
+   ```
+   MYSQL_URL = ${{MySQL.MYSQL_URL}}
+   ```
+
+   (`MySQL` = le nom exact du service base de données, sensible à la casse.)
+   Sans cela, le conteneur redémarre en boucle sur une erreur de connexion.
+
+4. **Ajouter un volume** monté sur `/app/data/uploads`.
    ⚠️ **Sans volume, tous les documents patients sont perdus à chaque
    redéploiement** : le système de fichiers d'un conteneur est éphémère.
-4. **Renseigner les variables** (onglet *Variables*) :
+
+5. **Générer le domaine** (*Settings → Networking → Generate Domain*) avant de
+   renseigner les variables : `APP_BASE_URL` en a besoin.
+
+6. **Renseigner les variables** (onglet *Variables* du service applicatif) :
 
    | Variable | Valeur |
    | --- | --- |
    | `JWT_SECRET` | une chaîne aléatoire longue (`openssl rand -hex 32`) |
    | `JWT_EXPIRES_IN` | `7d` |
-   | `APP_BASE_URL` | l'URL publique Railway (sert aux liens de confirmation e-mail) |
+   | `APP_BASE_URL` | l'URL publique, **sans slash final** |
    | `GROQ_API_KEY` / `GROQ_MODEL` | clé Groq + `qwen/qwen3.8-27b` |
    | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | compte d'envoi |
 
    `PORT` est fourni automatiquement par Railway — ne pas le définir.
-5. **Premier démarrage** : `sync({ alter: true })` crée le schéma tout seul.
-   Pour charger le jeu de démonstration, lancer `npm run seed` depuis le shell
-   Railway (⚠️ il vide la base).
+
+   ⚠️ **Railway met les changements de variables en attente.** Tant que le
+   service n'a pas redéployé, le processus tourne avec l'ancien environnement.
+   Un `JWT_SECRET` visible dans l'interface mais pas encore appliqué produit
+   `Error: secretOrPrivateKey must have a value` et un HTTP 500 à l'inscription,
+   alors que la connexion échoue proprement en 401 (elle n'atteint jamais
+   `jwt.sign`).
+
+7. **Premier démarrage** : `sync({ alter: true })` crée le schéma tout seul.
+   Charger ensuite le jeu de démonstration depuis le shell Railway :
+   `npm run seed` (⚠️ il vide la base).
+
+### En cas d'échec au démarrage
+
+`config/init.js` affiche le nom de l'erreur, le code du pilote MySQL et l'état
+de chaque variable de connexion reconnue. Quand aucune n'est présente, il
+rappelle explicitement la référence `${{MySQL.MYSQL_URL}}` à créer.
 
 ### Points connus avant une vraie mise en production
 
-Cette configuration convient à une démonstration. Pour un usage réel il reste à
-traiter : CORS ouvert à tous (`app.use(cors())`), absence de `helmet` et de rate
-limiting, JWT longue durée stocké en `localStorage`, `sync({ alter: true })` au
-démarrage à remplacer par des migrations, et 4 vulnérabilités `npm audit` de
-niveau *high* (`mysql2`, `nodemailer`, `path-to-regexp`, `lodash`).
+Traités : CORS restreint, dépendances à jour (0 vulnérabilité *high*), délais
+SMTP bornés, script destructeur `initDb.js` protégé.
+
+Restent à traiter : absence de `helmet` et de rate limiting sur `/api/auth`,
+JWT longue durée stocké en `localStorage` (pas de refresh token),
+`sync({ alter: true })` au démarrage à remplacer par des migrations, en-tête
+`x-powered-by` exposé, et 2 vulnérabilités `npm audit` de niveau *moderate*
+laissées en l'état — `uuid` ne concerne que l'appel avec un paramètre `buf`,
+que le code n'utilise pas, et le correctif proposé pour `sequelize` est un
+retour en v3 qui casserait l'application.
 
 > **Données de santé.** L'application manipule des données de santé nominatives.
 > En France, leur hébergement impose un hébergeur certifié **HDS**, ce que n'est

@@ -590,6 +590,9 @@ Chaque composant doit avoir:
 | Documents (upload / telechargement / partage) | Fait (7 sept. 2026) | `routes/documents.js` + `multer`, stockage disque, `visibility` shared/private, acces medecin traitant, **depot medecin -> dossier patient**. Manque: S3/chiffrement/antivirus. |
 | Messagerie patient <-> medecin | Fait (7 sept. 2026) | `routes/messages.js` + modele `Message`, page `/messages` role-aware, pastille non-lus, polling 10 s. Manque: temps reel (WebSocket), pieces jointes. |
 | Tendances symptomes (semaine/mois/annee) | A faire | Donnees brutes uniquement. |
+| Mise en ligne | Fait (27 sept. 2026) | Deploye sur Railway (Node + MySQL + volume persistant pour les documents) : https://suivi-production-caea.up.railway.app — voir la section Deploiement du README. |
+| Durcissement securite | Fait (partiel) | CORS restreint (avec acceptation automatique de l'origine du serveur), dependances a jour (0 vulnerabilite *high*), delais SMTP bornes, `initDb.js` destructeur protege. Manque: helmet, rate limiting, refresh token, migrations. |
+| Envoi d'e-mails | Fait (limite) | Confirmation d'adresse fonctionnelle, avec redirection vers la page de connexion. Gmail refuse l'envoi depuis une IP d'hebergeur : passer par Brevo ou equivalent pour une production reelle. |
 | Design System (tokens + Storybook) | A faire | CSS custom actuel, pas de DS versionne. |
 | Migration Next + FastAPI + Postgres | A faire | Non commencee. |
 | Tests unitaires / integration / E2E | A faire | `npm test` = stub. |

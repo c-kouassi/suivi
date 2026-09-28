@@ -18,34 +18,58 @@ Ce dossier contient le code SwiftUI du petit compagnon iPhone qui lit les donnee
 
 HealthKit demande une capability Apple et ne fonctionnera pas dans le simulateur pour lire une Apple Watch reelle.
 
-## Tester sur iPhone
+## Tester sur iPhone — avec le serveur en ligne (recommande)
+
+L'application est deployee : aucune configuration reseau n'est necessaire,
+l'iPhone peut meme etre en 4G/5G.
+
+1. Dans l'application, saisir l'URL :
+
+```text
+https://suivi-production-caea.up.railway.app/api
+```
+
+2. Saisir les identifiants d'un patient confirme
+   (par exemple `marc.petit@demo.fr` / `demo1234` apres `npm run seed`).
+3. Appuyer sur `Synchroniser mes donnees`.
+4. Accepter les permissions Apple Health.
+5. Verifier les donnees dans le dashboard SuiviPatient.
+
+## Tester contre le serveur local
+
+A reserver au developpement : cette voie echoue souvent sur les reseaux
+d'ecole ou d'entreprise.
 
 1. Demarrer le backend sur le Mac :
 
 ```bash
 cd /Users/chocobain/devs/hetic/suivipatient
-npm start
+npm run dev
 ```
 
-2. Trouver l'adresse IP locale du Mac :
-
-```bash
-ipconfig getifaddr en0
-```
-
-3. Dans l'application, remplacer l'URL par :
+Le demarrage affiche directement l'URL a coller dans l'application :
 
 ```text
-http://ADRESSE_IP_DU_MAC:3000/api
+📱 Reseau   : http://192.168.1.25:3000/api   ← a coller dans l'app iOS
 ```
 
-Exemple : `http://192.168.1.25:3000/api`.
+2. Mettre l'iPhone et le Mac sur le meme Wi-Fi, puis synchroniser.
 
-4. Mettre l'iPhone et le Mac sur le meme Wi-Fi.
-5. Saisir les identifiants d'un patient confirme.
-6. Appuyer sur `Synchroniser mes donnees`.
-7. Accepter les permissions Apple Health.
-8. Verifier les donnees dans le dashboard SuiviPatient.
+### Si la synchronisation expire (« the request timed out »)
+
+- **Isolation client.** Les Wi-Fi d'ecole et d'entreprise empechent souvent
+  deux appareils de se joindre. Le serveur est joignable depuis le Mac mais
+  pas depuis l'iPhone. Utiliser un routeur personnel.
+- **Le partage de connexion depuis l'iPhone ne marche pas dans ce sens.**
+  iOS ne route pas le trafic du telephone hote vers un appareil connecte a son
+  propre point d'acces. Il faut l'inverse : le Mac partage sa connexion.
+- **Permission « Reseau local ».** Reglages → SuiviPatientHealthKit → activer
+  « Reseau local ». Sans elle, iOS bloque silencieusement les connexions vers
+  une IP locale, ce qui se manifeste par un simple timeout.
+- **L'IP du Mac change** a chaque reseau : la relire au demarrage du serveur.
+
+Le plus simple en demonstration reste l'URL de production ci-dessus, ou un
+tunnel : `cloudflared tunnel --url http://localhost:3000`.
 
 ## Donnees synchronisees
 

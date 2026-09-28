@@ -2,6 +2,12 @@
 
 Un serveur web ne peut pas lire directement une Apple Watch. L'application iOS doit demander l'autorisation HealthKit, lire les mesures autorisées, puis appeler l'API SuiviPatient avec le JWT du patient.
 
+**Base URL en production :** `https://suivi-production-caea.up.railway.app/api`
+
+Les appels depuis l'application iOS ne sont pas soumis au CORS (`URLSession`
+n'est pas un navigateur) : le serveur accepte les requêtes sans en-tête
+`Origin`, la synchronisation fonctionne donc depuis n'importe quel réseau.
+
 ## Endpoint
 
 `POST /api/apple-health/sync`
