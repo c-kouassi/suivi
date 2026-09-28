@@ -254,9 +254,12 @@ router.get('/confirm/:token', async (req, res) => {
       return res.status(400).json({ error: 'Token de confirmation manquant' });
     }
 
+    // Ce lien est ouvert depuis un client mail, dans un navigateur : on
+    // redirige vers la page de connexion plutôt que de renvoyer du JSON brut,
+    // que l'utilisateur verrait s'afficher tel quel sur une page blanche.
     const user = await User.findOne({ where: { emailVerificationToken: token } });
     if (!user) {
-      return res.status(400).json({ error: 'Lien de confirmation invalide ou expiré' });
+      return res.redirect('/auth?confirme=invalide');
     }
 
     user.isEmailVerified = true;
@@ -264,10 +267,7 @@ router.get('/confirm/:token', async (req, res) => {
     user.emailVerifiedAt = new Date();
     await user.save();
 
-    return res.status(200).json({
-      message: 'Votre compte a bien été confirmé. Vous pouvez maintenant vous connecter.',
-      email: user.email
-    });
+    return res.redirect(`/auth?confirme=1&email=${encodeURIComponent(user.email)}`);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });

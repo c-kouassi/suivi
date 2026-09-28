@@ -14,7 +14,7 @@
   <div class="auth-left">
     <div class="auth-logo">🏥</div>
     <h1>SuiviPatient</h1>
-    <p>Assistant IA de suivi post-hospitalisation pour un rétablissement serein et accompagné</p>
+    <p>Le suivi de vos troubles thyroïdiens, partagé avec votre endocrinologue</p>
 
     <div class="auth-features">
       <div class="auth-feature">
@@ -166,6 +166,31 @@
   <script>
     // Redirect if already logged in
     if (getToken()) window.location.href = '/dashboard';
+
+    // Retour depuis le lien de confirmation reçu par e-mail.
+    (function afficherConfirmation() {
+      const params = new URLSearchParams(window.location.search);
+      const etat = params.get('confirme');
+      if (!etat) return;
+
+      const alerte = document.getElementById('loginAlert');
+      const email = params.get('email');
+
+      if (etat === '1') {
+        alerte.className = 'alert alert-success';
+        alerte.textContent = email
+          ? `✅ L'adresse ${email} est confirmée. Vous pouvez maintenant vous connecter.`
+          : '✅ Votre adresse e-mail est confirmée. Vous pouvez maintenant vous connecter.';
+        if (email) document.getElementById('loginEmail').value = email;
+      } else {
+        alerte.className = 'alert alert-danger';
+        alerte.textContent =
+          "⚠️ Ce lien de confirmation n'est plus valide. S'il a déjà été utilisé, connectez-vous simplement ; sinon, demandez un nouvel envoi.";
+      }
+
+      // On nettoie l'URL pour que le message ne réapparaisse pas au rechargement.
+      window.history.replaceState({}, '', '/auth');
+    })();
 
     // Toggle views
     document.getElementById('showRegister').addEventListener('click', (e) => {
